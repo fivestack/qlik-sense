@@ -1,0 +1,1 @@
+from .app_qlik_sense import QlikSenseAppRepository

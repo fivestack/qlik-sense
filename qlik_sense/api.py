@@ -3,7 +3,7 @@ This module provides functionality for working with Qlik Sense apps when this pa
 """
 from typing import TYPE_CHECKING
 
-from qlik_sense.orm import session
+from qlik_sense.orm.session import Session
 from qlik_sense.service_layer import unit_of_work, services
 
 if TYPE_CHECKING:
@@ -19,13 +19,14 @@ class QlikSense:
         certificate: the file path to the cert on the local machine
     """
     def __init__(self, host: str, certificate: str):
-        self.session = session.Session(log_name='qsapi',
-                                       verbosity='INFO',
-                                       schema='https',
-                                       host=host,
-                                       port=4242,
-                                       certificate=certificate,
-                                       verify=False)
+        session = Session(log_name='qsapi',
+                          verbosity='INFO',
+                          schema='https',
+                          host=host,
+                          port=4242,
+                          certificate=certificate,
+                          verify=False)
+        self.uow = unit_of_work.QlikSenseUnitOfWork(session=session)
 
     def get_app(self, guid: str) -> 'models.App':
         """
@@ -36,8 +37,7 @@ class QlikSense:
 
         Returns: a Qlik Sense App object
         """
-        uow = unit_of_work.QlikSenseUnitOfWork(session=self.session)
-        return uow.apps.get(guid=guid)
+        return self.uow.apps.get(guid=guid)
 
     def get_app_by_name_and_stream(self, app_name: str, stream_name: str) -> 'models.App':
         """
@@ -49,8 +49,7 @@ class QlikSense:
 
         Returns: a Qlik Sense App object
         """
-        uow = unit_of_work.QlikSenseUnitOfWork(session=self.session)
-        return uow.apps.get_by_name_and_stream(app_name=app_name, stream_name=stream_name)
+        return self.uow.apps.get_by_name_and_stream(app_name=app_name, stream_name=stream_name)
 
     def reload_app(self, guid: str):
         """
@@ -59,5 +58,4 @@ class QlikSense:
         Args:
             guid: guid of the app on the server
         """
-        uow = unit_of_work.QlikSenseUnitOfWork(session=self.session)
-        services.reload_app(guid=guid, uow=uow)
+        services.reload_app(guid=guid, uow=self.uow)

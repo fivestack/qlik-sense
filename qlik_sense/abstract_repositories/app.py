@@ -2,7 +2,7 @@ import abc
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from qlik_sense.domain import models
+    from qlik_sense import models
 
 
 class AbstractAppRepository(abc.ABC):
@@ -24,8 +24,16 @@ class AbstractAppRepository(abc.ABC):
             self.seen.add(obj)
         return obj
 
-    def add(self, app: 'models.App'):
-        self._add(app)
+    def add(self, app: 'models.App', file_name: str):
+        self._add(app=app, file_name=file_name)
+        self.seen.add(app)
+
+    def update(self, app: 'models.App', updates: dict):
+        self._update(app=app, updates=updates)
+        self.seen.add(app)
+
+    def remove(self, app: 'models.App'):
+        self._remove(app=app)
         self.seen.add(app)
 
     @abc.abstractmethod
@@ -37,5 +45,13 @@ class AbstractAppRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _add(self, app: 'models.App'):
+    def _add(self, app: 'models.App', file_name: str):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _update(self, app: 'models.App', updates: dict):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _remove(self, app: 'models.App'):
         raise NotImplementedError

@@ -5,11 +5,13 @@ from qlik_sense import repositories
 
 if TYPE_CHECKING:
     from qlik_sense import abstract_repositories
+    from qlik_sense.session import Session
 
 
 class AbstractUnitOfWork(abc.ABC):
 
     session = None
+    controller = None
     _apps = None
 
     def __enter__(self):
@@ -28,6 +30,6 @@ class AbstractUnitOfWork(abc.ABC):
 
 class QlikSenseUnitOfWork(AbstractUnitOfWork):
 
-    def __init__(self, session):
+    def __init__(self, session: 'Session'):
         self.session = session
-        self.init_repositories(apps=repositories.QlikSenseAppRepository(self.session))
+        self.init_repositories(apps=repositories.QlikSenseAppRepository(session))

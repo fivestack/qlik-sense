@@ -1,32 +1,30 @@
 import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from qlik_sense import models
+    from qlik_sense.orm.app import AppSession
 
 
 class AbstractAppRepository(abc.ABC):
-    """
-    This repository contains methods to work with QlikSense apps
-    """
+
+    session: 'AppSession' = None
+
     def __init__(self):
         self.seen = set()
+
+    def query(self, app_name: str, stream_name: str) -> 'List[models.App]':
+        objs = self._query(app_name=app_name, stream_name=stream_name)
+        if objs:
+            for obj in objs:
+                self.seen.add(obj)
+        return objs
 
     def get(self, guid: str) -> 'models.App':
         obj = self._get(guid=guid)
         if obj:
             self.seen.add(obj)
         return obj
-
-    def get_by_name_and_stream(self, app_name: str, stream_name: str) -> 'models.App':
-        obj = self._get_by_name_and_stream(app_name=app_name, stream_name=stream_name)
-        if obj:
-            self.seen.add(obj)
-        return obj
-
-    def add(self, app: 'models.App', file_name: str):
-        self._add(app=app, file_name=file_name)
-        self.seen.add(app)
 
     def update(self, app: 'models.App', updates: dict):
         self._update(app=app, updates=updates)
@@ -36,16 +34,15 @@ class AbstractAppRepository(abc.ABC):
         self._remove(app=app)
         self.seen.add(app)
 
+    def add(self, file_name: str, app_name: str):
+        self._add(file_name=file_name, app_name=app_name)
+
+    @abc.abstractmethod
+    def _query(self, app_name: str, stream_name: str) -> 'List[models.App]':
+        raise NotImplementedError
+
     @abc.abstractmethod
     def _get(self, guid: str) -> 'models.App':
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def _get_by_name_and_stream(self, app_name: str, stream_name: str) -> 'models.App':
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def _add(self, app: 'models.App', file_name: str):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -54,4 +51,8 @@ class AbstractAppRepository(abc.ABC):
 
     @abc.abstractmethod
     def _remove(self, app: 'models.App'):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _add(self, file_name: str, app_name: str):
         raise NotImplementedError

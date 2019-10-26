@@ -1,27 +1,29 @@
-from typing import TYPE_CHECKING
+"""
+The domain models are very basic for now, as the core functionality is built out. Once more complicated
+functionality is required, these may grow.
+"""
 from dataclasses import dataclass
-
-if TYPE_CHECKING:
-    from qlik_sense.session import Session
 
 
 @dataclass
 class App:
-    guid: str = None
+    """
+    Represents a Qlik Sense application
+
+    Args:
+        guid: the guid of the app on the server
+        name: the name of the application
+    """
+    guid: str
     name: str = None
-    stream_name: str = None
 
-    def reload(self, session: 'Session'):
-        session.post(url=f'qrs/app/{self.guid}/reload')
 
-    def publish(self, session: 'Session', stream_guid: str):
-        session.put(url=f'/qrs/app/{self.guid}/publish', params={'stream': stream_guid})
+@dataclass
+class Stream:
+    """
+    Represents a Qlik Sense Stream
 
-    def replace(self, session: 'Session', guid: str):
-        session.put(url=f'/qrs/app/{self.guid}/replace', params={'app': guid})
-
-    def copy(self, session: 'Session', name: str = None):
-        session.post(url=f'/qrs/app/{self.guid}/copy', params={'name': name})
-
-    def download(self, session: 'Session'):
-        session.download(guid=self.guid, file_name=f'{self.name}.qvf')
+    Args:
+        guid: the guid of the stream on the server
+    """
+    guid: str

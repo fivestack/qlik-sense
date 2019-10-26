@@ -15,6 +15,8 @@ python workflow more easily. While Qlik's API could be used directly, this strea
 - requests
 - requests_ntlm
 - urllib3
+- uuid
+- marshmallow
 
 # Installation
 
@@ -43,8 +45,8 @@ This package was inspired by Rafael Sanz's work:
 https://github.com/rafael-sanz/qsAPI/blob/master/qsAPI.py
 
 I would like to acknowledge the work he spent to figure out all of the logistics of Qlik Sense's APIs.
-I redeployed a modified version of his Controller class as the core Session class in the ORM for this library and
-built functionality around that class.
+I redeployed a modified version of his Controller and QRS (Sessions here) classes in the ORM for this library
+and built functionality around them.
 
 # Full Documentation
 

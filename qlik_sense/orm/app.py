@@ -58,7 +58,7 @@ class AppSession:
 
     def copy(self, app: 'models.App', name: str = None) -> 'requests.Response':
         params = {'name': name} if name else None
-        return self.controller.post(url=f'{self.url}app/{app.guid}/copy', params=params)
+        return self.controller.post(url=f'{self.url}/{app.guid}/copy', params=params)
 
     def export(self, app: 'models.App') -> 'requests.Response':
         token = uuid.uuid4()

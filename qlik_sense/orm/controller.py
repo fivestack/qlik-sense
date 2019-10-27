@@ -189,7 +189,7 @@ class Controller:
         query = urllib.parse.urlencode(p, doseq=True, quote_via=urllib.parse.quote)
         return urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
 
-    def _call(self, method: str, url, params: dict = None, data: str = None, files=None) -> requests.Response:
+    def _call(self, method: str, url, params: dict = None, data: str = None, files=None) -> 'requests.Response':
         """
         All requests are routed through this method.
 

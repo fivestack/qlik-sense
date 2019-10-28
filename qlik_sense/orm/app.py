@@ -12,12 +12,25 @@ if TYPE_CHECKING:
     from qlik_sense import models
 
 
+class StreamSchema(ma.Schema):
+    """
+    A marshmallow schema corresponding to a qlik_sense Schema object
+    """
+    guid = ma.fields.Str(required=True, data_key='id')
+    name = ma.fields.Str(required=False)
+
+    @ma.post_load()
+    def post_load(self, data: dict, **kwargs) -> 'models.Stream':
+        return models.Stream(**data)
+
+
 class AppSchema(ma.Schema):
     """
     A marshmallow schema corresponding to a qlik_sense App object
     """
     guid = ma.fields.Str(required=True, data_key='id')
     name = ma.fields.Str(required=False)
+    stream = ma.fields.Nested(StreamSchema, required=False)
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'models.App':

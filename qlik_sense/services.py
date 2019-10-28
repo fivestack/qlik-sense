@@ -48,7 +48,7 @@ def update_app(guid: str, updates: dict, uow: 'unit_of_work.AbstractUnitOfWork')
         uow: the unit of work containing the App repository
     """
     app = uow.apps.get(guid=guid)
-    uow.apps.update(app=app, updates=updates)
+    uow.apps.session.update(app=app, updates=updates)
 
 
 def delete_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):

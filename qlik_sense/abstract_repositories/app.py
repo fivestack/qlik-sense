@@ -34,8 +34,8 @@ class AbstractAppRepository(abc.ABC):
         self._remove(app=app)
         self.seen.add(app)
 
-    def add(self, file_name: str, app_name: str):
-        self._add(file_name=file_name, app_name=app_name)
+    def add(self, app: 'models.App'):
+        self._add(app=app)
 
     @abc.abstractmethod
     def _query(self, app_name: str, stream_name: str) -> 'List[models.App]':
@@ -46,13 +46,9 @@ class AbstractAppRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _update(self, app: 'models.App', updates: dict):
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def _remove(self, app: 'models.App'):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _add(self, file_name: str, app_name: str):
+    def _add(self, app: 'models.App'):
         raise NotImplementedError

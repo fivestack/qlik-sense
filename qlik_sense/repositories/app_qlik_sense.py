@@ -47,16 +47,6 @@ class QlikSenseAppRepository(abstract_repositories.AbstractAppRepository):
         """
         return self.session.query_one(guid=guid)
 
-    def _update(self, app: 'models.App', updates: dict):
-        """
-        Updates the provided attributes on an app
-
-        Args:
-            app: the app to update
-            updates: the updates to make
-        """
-        self.session.update(app=app, updates=updates)
-
     def _remove(self, app: 'models.App'):
         """
         Deletes the app from the server
@@ -66,12 +56,11 @@ class QlikSenseAppRepository(abstract_repositories.AbstractAppRepository):
         """
         self.session.delete(app=app)
 
-    def _add(self, file: iter, params: dict):
+    def _add(self, app: 'models.App'):
         """
-        Uploads an app to the server
+        This is not implemented for the QlikSense version, there is a service to upload an app.
 
         Args:
-            file: the file to upload
-            params: parameters/attributes for the new app (e.g., name, keepdata)
+            app: here to match the signature of super, not used
         """
-        self.session.upload(file=file, params=params)
+        raise NotImplementedError

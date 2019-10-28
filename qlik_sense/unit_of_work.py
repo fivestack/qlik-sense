@@ -17,7 +17,6 @@ class AbstractUnitOfWork(abc.ABC):
     Collects all repositories to be worked on. Also contains a single Controller instance for when a repository
     is not needed (e.g., a file download link).
     """
-    controller = None
     _apps = None
 
     def __enter__(self):
@@ -53,6 +52,5 @@ class QlikSenseUnitOfWork(AbstractUnitOfWork):
         controller: a Controller instance that connects to the QlikSense APIs
     """
     def __init__(self, controller: 'orm.Controller'):
-        self.controller = controller
         app_session = orm.AppSession(controller=controller)
         self.init_repositories(apps=repositories.QlikSenseAppRepository(session=app_session))

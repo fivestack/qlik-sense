@@ -8,7 +8,6 @@ from qlik_sense import models
 
 if TYPE_CHECKING:
     from qlik_sense import unit_of_work
-    import requests
 
 
 def get_app_by_name_and_stream_name(app_name: str, stream_name: str,
@@ -89,7 +88,7 @@ def copy_app(guid: str, name: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     uow.apps.session.copy(app=app, name=name)
 
 
-def download_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork') -> str:
+def download_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Downloads an app from the server
 
@@ -100,28 +99,12 @@ def download_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork') -> str:
     Returns: the file path to the downloaded app
     """
     app = uow.apps.get(guid=guid)
-    url = uow.apps.session.export(app).json()['downloadPath']
-    response = uow.controller.get(url=url)
-    file = _save_file(response=response, file_name=f'{app.name}.qvf')
-    return file
-
-
-def _save_file(response: 'requests.Response', file_name: str) -> str:
-    """
-    A utility function for download_app() that saves the file in the response
-
-    Args:
-        response: the response containing the file
-        file_name: the name of the new file on the file server
-
-    Returns: the file path to the downloaded app
-    """
-    with open(file_name, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=512 << 10):
+    download_url = uow.apps.session.export(app=app)
+    file = uow.apps.session.download_file(url=download_url)
+    with open(file=f'{app.name}.qvf', mode='wb') as f:
+        for chunk in file:
             if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
-        file = f.name
-    return file
 
 
 def publish_app(guid: str, stream_guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):

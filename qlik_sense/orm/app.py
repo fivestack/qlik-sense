@@ -4,7 +4,6 @@ to wrap the QRS endpoints and uses marshmallow to parse the results into qlik_se
 """
 from typing import TYPE_CHECKING, List
 
-import requests
 import uuid
 import marshmallow as ma
 
@@ -28,7 +27,8 @@ class AppSchema(ma.Schema):
 class AppSession:
     """
     AppSession wraps each one of the app-based QlikSense endpoints in a method. This buffers the application
-    from API updates. It also allows for the Controller class to be mocked for tests instead of the entire QRS API.
+    from API updates. It also allows for the Session class to be mocked for tests instead of the entire QRS API (or
+    Controller class).
 
     Args:
         controller: a Controller class that provides an interface over the QRS API
@@ -43,32 +43,36 @@ class AppSession:
         response = self.controller.get(url=self.url, params={'filter': query_string}).json()
         return self.schema.loads(response)
 
-    def get(self, guid: str) -> 'models.App':
+    def query_one(self, guid: str) -> 'models.App':
         app = self.controller.get(url=f'{self.url}/{guid}').json()
         return self.schema.loads(app)
 
-    def update(self, app: 'models.App', updates: dict) -> 'requests.Response':
-        return self.controller.put(url=f'{self.url}/{app.guid}', data=updates)
+    def update(self, app: 'models.App', updates: dict):
+        self.controller.put(url=f'{self.url}/{app.guid}', data=updates)
 
-    def delete(self, app: 'models.App') -> 'requests.Response':
-        return self.controller.delete(url=f'{self.url}/{app.guid}')
+    def delete(self, app: 'models.App'):
+        self.controller.delete(url=f'{self.url}/{app.guid}')
 
-    def reload(self, app: 'models.App') -> 'requests.Response':
-        return self.controller.post(url=f'{self.url}/{app.guid}/reload')
+    def reload(self, app: 'models.App'):
+        self.controller.post(url=f'{self.url}/{app.guid}/reload')
 
-    def copy(self, app: 'models.App', name: str = None) -> 'requests.Response':
+    def copy(self, app: 'models.App', name: str = None):
         params = {'name': name} if name else None
-        return self.controller.post(url=f'{self.url}/{app.guid}/copy', params=params)
+        self.controller.post(url=f'{self.url}/{app.guid}/copy', params=params)
 
-    def export(self, app: 'models.App') -> 'requests.Response':
+    def export(self, app: 'models.App') -> str:
         token = uuid.uuid4()
-        return self.controller.post(url=f'{self.url}/{app.guid}/export/{token}')
+        response = self.controller.post(url=f'{self.url}/{app.guid}/export/{token}')
+        return response.json()['downloadPath']
 
-    def publish(self, app: 'models.App', stream: 'models.Stream') -> 'requests.Response':
-        return self.controller.put(url=f'{self.url}/{app.guid}/publish', params={'stream': stream.guid})
+    def publish(self, app: 'models.App', stream: 'models.Stream'):
+        self.controller.put(url=f'{self.url}/{app.guid}/publish', params={'stream': stream.guid})
 
-    def replace(self, app: 'models.App', app_to_replace: 'models.App') -> 'requests.Response':
-        return self.controller.put(url=f'{self.url}/{app.guid}/replace', params={'app': app_to_replace.guid})
+    def replace(self, app: 'models.App', app_to_replace: 'models.App'):
+        self.controller.put(url=f'{self.url}/{app.guid}/replace', params={'app': app_to_replace.guid})
 
-    def upload(self, file, params: dict) -> 'requests.Response':
-        return self.controller.post(url=f'{self.url}/upload', params=params, data=file)
+    def upload(self, file, params: dict):
+        self.controller.post(url=f'{self.url}/upload', params=params, data=file)
+
+    def download_file(self, url: str) -> iter:
+        return self.controller.get(url=url).iter_content(chunk_size=512 << 10)

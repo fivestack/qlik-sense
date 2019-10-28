@@ -45,7 +45,7 @@ class QlikSenseAppRepository(abstract_repositories.AbstractAppRepository):
 
         Returns: the App
         """
-        return self.session.get(guid=guid)
+        return self.session.query_one(guid=guid)
 
     def _update(self, app: 'models.App', updates: dict):
         """

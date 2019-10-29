@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, List
-import json
 
 import uuid
 
@@ -121,11 +120,12 @@ class FakeAppRepository(abstract_repositories.AbstractAppRepository):
     def _query(self, app_name: str, stream_name: str) -> 'List[models.App]':
         query_string = f"name eq '{app_name}' and stream.name eq '{stream_name}'"
         self.session.query(query_string=query_string)
-        return next((
+        app = next((
             a for a in self._apps
             if a.name == app_name
             and a.stream.name == stream_name
         ), None)
+        return [app]
 
     def _get(self, guid: str) -> 'models.App':
         self.session.query_one(guid=guid)

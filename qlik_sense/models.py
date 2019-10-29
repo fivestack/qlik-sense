@@ -16,9 +16,6 @@ class Stream:
     guid: str = field(hash=True)
     name: str = field(default=None, hash=False)
 
-    def __iter__(self):
-        yield self.guid
-
 
 @dataclass(unsafe_hash=True)
 class App:
@@ -32,7 +29,3 @@ class App:
     guid: str = field(hash=True)
     name: str = field(default=None, hash=False)
     stream: Stream = field(default=None, hash=False)
-
-    def __iter__(self):
-        yield self.guid
-        yield self.stream.guid

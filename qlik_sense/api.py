@@ -29,7 +29,7 @@ class QlikSense:
 
     def get_app_by_name_and_stream(self, app_name: str, stream_name: str) -> 'models.App':
         """
-        Provides an App object given its name and the name of the stream it's in.
+        Provides an App object given its name and the name of the stream it's in
 
         Args:
             app_name: the exact name of the app on the server
@@ -41,7 +41,7 @@ class QlikSense:
 
     def get_app(self, guid: str) -> 'models.App':
         """
-        Provides an App object given its guid.
+        Provides an App object given its guid
 
         Args:
             guid: guid of the app on the server
@@ -50,72 +50,72 @@ class QlikSense:
         """
         return services.get_app(guid=guid, uow=self.uow)
 
-    def update_app(self, guid: str, updates: dict):
+    def update_app(self, app: 'models.App', updates: dict):
         """
-        Updates an app given its guid and the data to be updated.
+        Updates an app given the data to be updated
 
         Args:
-            guid: guid of the app on the server
+            app: app to update
             updates: attributes to update
         """
-        services.update_app(guid=guid, updates=updates, uow=self.uow)
+        services.update_app(guid=app.guid, updates=updates, uow=self.uow)
 
-    def delete_app(self, guid: str):
+    def delete_app(self, app: 'models.App'):
         """
-        Deletes an app given its guid
+        Deletes an app
 
         Args:
-            guid: guid of the app on the server
+            app: app to delete from the server
         """
-        services.delete_app(guid=guid, uow=self.uow)
+        services.delete_app(guid=app.guid, uow=self.uow)
 
-    def reload_app(self, guid: str):
+    def reload_app(self, app: 'models.App'):
         """
-        Reloads an app given its guid.
-
-        Args:
-            guid: guid of the app on the server
-        """
-        services.reload_app(guid=guid, uow=self.uow)
-
-    def copy_app(self, guid: str, name: str = None):
-        """
-        Copies an app given its guid.
+        Reloads an app
 
         Args:
-            guid: guid of the app on the server
+            app: app to reload
+        """
+        services.reload_app(guid=app.guid, uow=self.uow)
+
+    def copy_app(self, app: 'models.App', name: str = None):
+        """
+        Copies an app
+
+        Args:
+            app: app to copy
             name: optional name for the new app
         """
-        services.copy_app(guid=guid, name=name, uow=self.uow)
+        services.copy_app(guid=app.guid, name=name, uow=self.uow)
 
-    def download_app(self, guid: str):
+    def download_app(self, app: 'models.App'):
         """
-        Downloads an app given its guid.
-
-        Args:
-            guid: guid of the app on the server
-        """
-        services.download_app(guid=guid, uow=self.uow)
-
-    def publish_app(self, guid: str, stream_guid: str):
-        """
-        Publishes an app given its guid.
+        Downloads an app
 
         Args:
-            guid: guid of the app on the server
-            stream_guid: guid of the stream on the server
+            app: app to download
         """
-        services.publish_app(guid=guid, stream_guid=stream_guid, uow=self.uow)
+        services.download_app(guid=app.guid, uow=self.uow)
 
-    def replace_app(self, guid: str, guid_to_replace: str):
+    def publish_app(self, app: 'models.App', stream: 'models.Stream'):
         """
-        Replaces one app <guid_to_replace> with another app <guid>
+        Publishes an app given a stream
 
         Args:
-            guid: guid of the app to copy
-            guid_to_replace: guid of the app to replace
+            app: app to publish
+            stream: stream to publish the app to
         """
-        services.replace_app(guid=guid, guid_to_replace=guid_to_replace, uow=self.uow)
+        services.publish_app(guid=app.guid, stream_guid=stream.guid, uow=self.uow)
+
+    def replace_app(self, app: 'models.App', app_to_replace: 'models.App'):
+        """
+        Replaces one app with another app
+
+        Args:
+            app: app to copy
+            app_to_replace: app to replace
+        """
+        services.replace_app(guid=app.guid, guid_to_replace=app_to_replace.guid, uow=self.uow)
 
     def upload_app(self, file_name: str, app_name: str):
         """

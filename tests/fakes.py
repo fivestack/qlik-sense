@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, List
+from dataclasses import asdict
 
 import uuid
 
@@ -43,6 +44,9 @@ class FakeAppSession(orm.AppSession):
             'url': f'{self.url}/{app.guid}',
             'data': updates
         }
+        for k, v in updates.items():
+            if k in asdict(app):
+                app.__setattr__(k, v)
         self.requests.append(request)
 
     def delete(self, app: 'models.App'):
@@ -107,7 +111,7 @@ class FakeAppSession(orm.AppSession):
     def download_file(self, url: str) -> iter:
         file = ['first line', 'second line', 'third line']
         for line in file:
-            yield line
+            yield bytes(line, encoding='utf-8')
 
 
 class FakeAppRepository(abstract_repositories.AbstractAppRepository):

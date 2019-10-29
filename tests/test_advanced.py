@@ -3,12 +3,9 @@ import pytest
 from .conftest import api
 
 
-@pytest.fixture
-def qs():
-    return api.QlikSense(host='', certificate='')
-
-
-def test_reload(qs):
-    guid = qs.search_for_guid_by_name('Test', 'Everyone')
-    qs.reload(guid)
+@pytest.skip
+def test_reload():
+    qs = api.QlikSense(host='', certificate='')
+    app = qs.get_app_by_name_and_stream('Test', 'Everyone')
+    qs.reload_app(app)
     assert 1 == 1

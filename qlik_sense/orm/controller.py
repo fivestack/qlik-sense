@@ -10,7 +10,6 @@ import os.path
 import urllib.parse
 import random
 import string
-import json
 
 import urllib3
 import requests
@@ -189,7 +188,7 @@ class Controller:
         query = urllib.parse.urlencode(p, doseq=True, quote_via=urllib.parse.quote)
         return urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
 
-    def _call(self, method: str, url, params: dict = None, data: str = None, files=None) -> 'requests.Response':
+    def call(self, method: str, url: str, params: dict = None, data: str = None, files=None) -> 'requests.Response':
         """
         All requests are routed through this method.
 
@@ -239,50 +238,3 @@ class Controller:
 
         self._log.debug(f'RECEIVED: {response.text}')
         return response
-
-    def get(self, url: str, params: dict = None) -> 'requests.Response':
-        """
-        Executes a get request
-
-        Args:
-            url: uri REST path
-            params: url parameters as a dict (example: {'filter': "name eq 'myApp'} )
-        """
-        return self._call(method='GET', url=url, params=params)
-
-    def post(self, url: str, params: dict = None, data: 'Union[dict, list]' = None, files=None) -> 'requests.Response':
-        """
-        Executes a post request
-
-        Args:
-            url: uri REST path
-            params: url parameters as a dict (example: {'filter': "name eq 'myApp'} )
-            data: stream data input (native dict/list structures are json formatted)
-            files: file input
-        """
-        if isinstance(data, dict) or isinstance(data, list):
-            data = json.dumps(data)
-        return self._call(method='POST', url=url, params=params, data=data, files=files)
-
-    def put(self, url: str, params: dict = None, data: 'Union[dict, list]' = None) -> 'requests.Response':
-        """
-        Executes a put request
-
-        Args:
-            url: uri REST path
-            params: url parameters as a dict (example: {'filter': "name eq 'myApp'} )
-            data: stream data input (native dict/list structures are json formatted)
-        """
-        if isinstance(data, dict) or isinstance(data, list):
-            data = json.dumps(data)
-        return self._call(method='PUT', url=url, params=params, data=json.dumps(data))
-
-    def delete(self, url: str, params: dict = None) -> 'requests.Response':
-        """
-        Executes a delete request
-
-        Args:
-            url: uri REST path
-            params: url parameters as a dict (example: {'filter': "name eq 'myApp'} )
-        """
-        return self._call(method='DELETE', url=url, params=params)

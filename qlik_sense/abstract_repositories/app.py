@@ -20,15 +20,11 @@ class AbstractAppRepository(abc.ABC):
                 self.seen.add(obj)
         return objs
 
-    def get(self, guid: str) -> 'models.App':
-        obj = self._get(guid=guid)
+    def get(self, id: str) -> 'models.App':
+        obj = self._get(id=id)
         if obj:
             self.seen.add(obj)
         return obj
-
-    def update(self, app: 'models.App', updates: dict):
-        self._update(app=app, updates=updates)
-        self.seen.add(app)
 
     def remove(self, app: 'models.App'):
         self._remove(app=app)
@@ -42,7 +38,7 @@ class AbstractAppRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _get(self, guid: str) -> 'models.App':
+    def _get(self, id: str) -> 'models.App':
         raise NotImplementedError
 
     @abc.abstractmethod

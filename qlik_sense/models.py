@@ -3,6 +3,7 @@ The domain models are very basic for now, as the core functionality is built out
 functionality is required, these may grow.
 """
 from dataclasses import dataclass, field
+from typing import Union
 
 
 @dataclass(unsafe_hash=True)
@@ -13,8 +14,9 @@ class Stream:
     Args:
         guid: the guid of the stream on the server
     """
-    guid: str = field(hash=True)
+    id: str = field(hash=True)
     name: str = field(default=None, hash=False)
+    privileges: list = field(default_factory=list, hash=False)
 
 
 @dataclass(unsafe_hash=True)
@@ -26,6 +28,15 @@ class App:
         guid: the guid of the app on the server
         name: the name of the application
     """
-    guid: str = field(hash=True)
+    id: str = field(hash=True)
     name: str = field(default=None, hash=False)
     stream: Stream = field(default=None, hash=False)
+
+
+@dataclass
+class QSAPIRequest:
+    method: str
+    url: str
+    params: dict = None
+    data: Union[str, list, dict] = None
+    file: iter = None

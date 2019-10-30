@@ -25,80 +25,67 @@ def get_app_by_name_and_stream_name(app_name: str, stream_name: str,
     return uow.apps.query(app_name=app_name, stream_name=stream_name)[0]
 
 
-def get_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork') -> 'models.App':
+def get_app(id: str, uow: 'unit_of_work.AbstractUnitOfWork') -> 'models.App':
     """
     Returns an App object based on its guid
 
     Args:
-        guid: the guid of the app on the server
+        id: the guid of the app on the server
         uow: the unit of work containing the App repository
 
     Returns: a qlik_sense App
     """
-    return uow.apps.get(guid=guid)
+    return uow.apps.get(id=id)
 
 
-def update_app(guid: str, updates: dict, uow: 'unit_of_work.AbstractUnitOfWork'):
-    """
-    Updates the provided attributes on an application
-
-    Args:
-        guid: the guid of the app to be updated on the server
-        updates: a dictionary containing the attributes to update
-        uow: the unit of work containing the App repository
-    """
-    app = uow.apps.get(guid=guid)
-    uow.apps.session.update(app=app, updates=updates)
-
-
-def delete_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def delete_app(id: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Deletes the app from the server
 
     Args:
-        guid: the guid of the app to be deleted from the server
+        id: the guid of the app to be deleted from the server
         uow: the unit of work containing the App repository
     """
-    app = uow.apps.get(guid=guid)
+    app = uow.apps.get(id=id)
     uow.apps.remove(app)
 
 
-def reload_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def reload_app(id: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Reloads the app
 
     Args:
-        guid: the guid of the app to be reloaded on the server
+        id: the guid of the app to be reloaded on the server
         uow: the unit of work containing the App repository
     """
-    app = uow.apps.get(guid=guid)
+    app = uow.apps.get(id=id)
     uow.apps.session.reload(app=app)
 
 
-def copy_app(guid: str, name: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def copy_app(id: str, name: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Copies the app
 
     Args:
-        guid: the guid of the app to be copied on the server
+        id: the guid of the app to be copied on the server
         name: the name of the new app
         uow: the unit of work containing the App repository
     """
-    app = uow.apps.get(guid=guid)
+    app = uow.apps.get(id=id)
     uow.apps.session.copy(app=app, name=name)
 
 
-def download_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def download_app(id: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Downloads an app from the server
 
     Args:
-        guid: the guid of the app to be downloaded from the server
+        id: the guid of the app to be downloaded from the server
         uow: the unit of work containing the App repository
 
     Returns: the file path to the downloaded app
     """
-    app = uow.apps.get(guid=guid)
+    app = uow.apps.get(id=id)
     download_url = uow.apps.session.export(app=app)
     file = uow.apps.session.download_file(url=download_url)
     with open(file=f'{app.name}.qvf', mode='wb') as f:
@@ -107,31 +94,31 @@ def download_app(guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
                 f.write(chunk)
 
 
-def publish_app(guid: str, stream_guid: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def publish_app(id: str, stream_id: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Publishes an app from your workspace to the provided stream
 
     Args:
-        guid: the guid of the app to be published on the server
-        stream_guid: the guid of the stream to which to publish the app
+        id: the guid of the app to be published on the server
+        stream_id: the guid of the stream to which to publish the app
         uow: the unit of work containing the App repository
     """
-    app = uow.apps.get(guid=guid)
-    stream = models.Stream(guid=stream_guid)
+    app = uow.apps.get(id=id)
+    stream = models.Stream(id=stream_id)
     uow.apps.session.publish(app=app, stream=stream)
 
 
-def replace_app(guid: str, guid_to_replace: str, uow: 'unit_of_work.AbstractUnitOfWork'):
+def replace_app(id: str, id_to_replace: str, uow: 'unit_of_work.AbstractUnitOfWork'):
     """
     Replaces a target app with the current app
 
     Args:
-        guid: the guid of the app to be copied on the server
-        guid_to_replace: the guid of the app to be replaced on the server
+        id: the guid of the app to be copied on the server
+        id_to_replace: the guid of the app to be replaced on the server
         uow: the unit of work containing the App repository
     """
-    app = uow.apps.get(guid=guid)
-    app_to_replace = uow.apps.get(guid=guid_to_replace)
+    app = uow.apps.get(id=id)
+    app_to_replace = uow.apps.get(id=id_to_replace)
     uow.apps.session.replace(app=app, app_to_replace=app_to_replace)
 
 

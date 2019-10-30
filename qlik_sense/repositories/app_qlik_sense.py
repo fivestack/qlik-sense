@@ -36,7 +36,7 @@ class QlikSenseAppRepository(abstract_repositories.AbstractAppRepository):
         query_string = f"name eq '{app_name}' and stream.name eq '{stream_name}'"
         return self.session.query(query_string=query_string)
 
-    def _get(self, guid: str) -> 'models.App':
+    def _get(self, id: str) -> 'models.App':
         """
         Returns an App based on its guid
 
@@ -45,7 +45,7 @@ class QlikSenseAppRepository(abstract_repositories.AbstractAppRepository):
 
         Returns: the App
         """
-        return self.session.query_one(guid=guid)
+        return self.session.query_one(id=id)
 
     def _remove(self, app: 'models.App'):
         """

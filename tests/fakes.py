@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, List
-from dataclasses import asdict
+from typing import List
+import json
 
 import uuid
 
-from .conftest import orm, abstract_repositories, unit_of_work
-
-if TYPE_CHECKING:
-    from .conftest import models
+from .conftest import orm, models, abstract_repositories, unit_of_work
 
 
 class FakeAppSession(orm.AppSession):
@@ -23,89 +20,33 @@ class FakeAppSession(orm.AppSession):
         self.controller = None
         self.requests = list()
 
+    def _call(self, request: 'models.QSAPIRequest'):
+        if request.data:
+            if isinstance(request.data, dict) or isinstance(request.data, list):
+                request.data = json.dumps(request.data)
+        self.requests.append(request)
+
     def query(self, query_string: str):
-        request = {
-            'method': 'GET',
-            'url': self.url,
-            'params': {'filter': query_string}
-        }
+        request = models.QSAPIRequest(
+            method='GET',
+            url=f'{self.url}',
+            params={'filter': query_string}
+        )
         self.requests.append(request)
 
-    def query_one(self, guid: str):
-        request = {
-            'method': 'GET',
-            'url': f'{self.url}/{guid}'
-        }
+    def query_one(self, id: str):
+        request = models.QSAPIRequest(
+            method='GET',
+            url=f'{self.url}/{id}'
+        )
         self.requests.append(request)
 
-    def update(self, app: 'models.App', updates: dict):
-        request = {
-            'method': 'PUT',
-            'url': f'{self.url}/{app.guid}',
-            'data': updates
-        }
-        for k, v in updates.items():
-            if k in asdict(app):
-                app.__setattr__(k, v)
-        self.requests.append(request)
-
-    def delete(self, app: 'models.App'):
-        request = {
-            'method': 'DELETE',
-            'url': f'{self.url}/{app.guid}'
-        }
-        self.requests.append(request)
-
-    def reload(self, app: 'models.App'):
-        request = {
-            'method': 'POST',
-            'url': f'{self.url}/{app.guid}/reload'
-        }
-        self.requests.append(request)
-
-    def copy(self, app: 'models.App', name: str = None):
-        params = {'name': name} if name else None
-        request = {
-            'method': 'POST',
-            'url': f'{self.url}/{app.guid}/copy',
-            'params': params
-        }
-        self.requests.append(request)
-
-    def export(self, app: 'models.App') -> str:
+    def export(self, app: 'models.App'):
         token = uuid.uuid4()
-        request = {
-            'method': 'POST',
-            'url': f'{self.url}/{app.guid}/export/{token}'
-        }
-        self.requests.append(request)
-        return 'path/to/download'
-
-    def publish(self, app: 'models.App', stream: 'models.Stream'):
-        params = {'stream': stream.guid}
-        request = {
-            'method': 'PUT',
-            'url': f'{self.url}/{app.guid}/publish',
-            'params': params
-        }
-        self.requests.append(request)
-
-    def replace(self, app: 'models.App', app_to_replace: 'models.App'):
-        params = {'app': app_to_replace.guid}
-        request = {
-            'method': 'PUT',
-            'url': f'{self.url}/{app.guid}/replace',
-            'params': params
-        }
-        self.requests.append(request)
-
-    def upload(self, file, params: dict):
-        request = {
-            'method': 'POST',
-            'url': f'{self.url}/upload',
-            'params': params,
-            'data': file
-        }
+        request = models.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/export/{token}'
+        )
         self.requests.append(request)
 
     def download_file(self, url: str) -> iter:
@@ -131,9 +72,9 @@ class FakeAppRepository(abstract_repositories.AbstractAppRepository):
         ), None)
         return [app]
 
-    def _get(self, guid: str) -> 'models.App':
-        self.session.query_one(guid=guid)
-        return next((a for a in self._apps if a.guid == guid), None)
+    def _get(self, id: str) -> 'models.App':
+        self.session.query_one(id=id)
+        return next((a for a in self._apps if a.id == id), None)
 
     def _remove(self, app: 'models.App'):
         self.session.delete(app=app)

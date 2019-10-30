@@ -3,20 +3,24 @@ This module provides the mechanics for directly interacting with Qlik Sense apps
 to wrap the QRS endpoints and uses marshmallow to parse the results into qlik_sense App objects.
 """
 from typing import TYPE_CHECKING, List
+from dataclasses import asdict
+import json
 
 import uuid
 import marshmallow as ma
 
+from qlik_sense import models
+
 if TYPE_CHECKING:
     from qlik_sense.orm.controller import Controller
-    from qlik_sense import models
+    import requests
 
 
 class StreamSchema(ma.Schema):
     """
     A marshmallow schema corresponding to a qlik_sense Schema object
     """
-    guid = ma.fields.Str(required=True, data_key='id')
+    id = ma.fields.Str(required=True)
     name = ma.fields.Str(required=False)
 
     @ma.post_load()
@@ -28,7 +32,7 @@ class AppSchema(ma.Schema):
     """
     A marshmallow schema corresponding to a qlik_sense App object
     """
-    guid = ma.fields.Str(required=True, data_key='id')
+    id = ma.fields.Str(required=True)
     name = ma.fields.Str(required=False)
     stream = ma.fields.Nested(StreamSchema, required=False)
 
@@ -46,46 +50,103 @@ class AppSession:
     Args:
         controller: a Controller class that provides an interface over the QRS API
     """
+    requests = None
 
     def __init__(self, controller: 'Controller'):
         self.controller = controller
         self.schema = AppSchema()
         self.url = '/qrs/app'
 
+    def _call(self, request: 'models.QSAPIRequest') -> 'requests.Response':
+        if request.data:
+            if isinstance(request.data, dict) or isinstance(request.data, list):
+                request.data = json.dumps(request.data)
+        return self.controller.call(**asdict(request))
+
     def query(self, query_string: str) -> 'List[models.App]':
-        response = self.controller.get(url=self.url, params={'filter': query_string}).json()
-        return self.schema.loads(response)
+        request = models.QSAPIRequest(
+            method='GET',
+            url=f'{self.url}',
+            params={'filter': query_string}
+        )
+        response = self._call(request)
+        return self.schema.loads(response.json())
 
-    def query_one(self, guid: str) -> 'models.App':
-        app = self.controller.get(url=f'{self.url}/{guid}').json()
-        return self.schema.loads(app)
+    def query_one(self, id: str) -> 'models.App':
+        request = models.QSAPIRequest(
+            method='GET',
+            url=f'{self.url}/{id}'
+        )
+        response = self._call(request)
+        return self.schema.loads(response.json())
 
-    def update(self, app: 'models.App', updates: dict):
-        self.controller.put(url=f'{self.url}/{app.guid}', data=updates)
+    def update(self, app: 'models.App'):
+        request = models.QSAPIRequest(
+            method='PUT',
+            url=f'{self.url}/{app.id}'
+        )
+        self._call(request)
 
     def delete(self, app: 'models.App'):
-        self.controller.delete(url=f'{self.url}/{app.guid}')
+        request = models.QSAPIRequest(
+            method='DELETE',
+            url=f'{self.url}/{app.id}'
+        )
+        self._call(request)
 
     def reload(self, app: 'models.App'):
-        self.controller.post(url=f'{self.url}/{app.guid}/reload')
+        request = models.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/reload'
+        )
+        self._call(request)
 
     def copy(self, app: 'models.App', name: str = None):
-        params = {'name': name} if name else None
-        self.controller.post(url=f'{self.url}/{app.guid}/copy', params=params)
+        request = models.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/copy',
+            params={'name': name} if name else None
+        )
+        self._call(request)
 
     def export(self, app: 'models.App') -> str:
         token = uuid.uuid4()
-        response = self.controller.post(url=f'{self.url}/{app.guid}/export/{token}')
+        request = models.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/export/{token}'
+        )
+        response = self._call(request)
         return response.json()['downloadPath']
 
     def publish(self, app: 'models.App', stream: 'models.Stream'):
-        self.controller.put(url=f'{self.url}/{app.guid}/publish', params={'stream': stream.guid})
+        request = models.QSAPIRequest(
+            method='PUT',
+            url=f'{self.url}/{app.id}/publish',
+            params={'stream': stream.id}
+        )
+        self._call(request)
 
     def replace(self, app: 'models.App', app_to_replace: 'models.App'):
-        self.controller.put(url=f'{self.url}/{app.guid}/replace', params={'app': app_to_replace.guid})
+        request = models.QSAPIRequest(
+            method='PUT',
+            url=f'{self.url}/{app.id}/replace',
+            params={'app': app_to_replace.id}
+        )
+        self._call(request)
 
     def upload(self, file, params: dict):
-        self.controller.post(url=f'{self.url}/upload', params=params, data=file)
+        request = models.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/upload',
+            params=params,
+            data=file
+        )
+        self._call(request)
 
     def download_file(self, url: str) -> iter:
-        return self.controller.get(url=url).iter_content(chunk_size=512 << 10)
+        request = models.QSAPIRequest(
+            method='GET',
+            url=url
+        )
+        response = self._call(request)
+        return response.iter_content(chunk_size=512 << 10)

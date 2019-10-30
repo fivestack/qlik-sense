@@ -35,7 +35,7 @@ from qlik_sense import api
 qs = api.QlikSense(host='HOST_NAME', certificate='CERT_FILE_PATH')
 
 app = qs.get_app_by_name_and_stream(app_name='Rate Monitor', stream_name='Actuarial')
-qs.reload_app(guid=app.guid)
+qs.reload_app(app)
 ```
 
 # Acknowledgements

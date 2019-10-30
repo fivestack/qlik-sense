@@ -50,16 +50,6 @@ class QlikSense:
         """
         return services.get_app(guid=guid, uow=self.uow)
 
-    def update_app(self, app: 'models.App', updates: dict):
-        """
-        Updates an app given the data to be updated
-
-        Args:
-            app: app to update
-            updates: attributes to update
-        """
-        services.update_app(guid=app.guid, updates=updates, uow=self.uow)
-
     def delete_app(self, app: 'models.App'):
         """
         Deletes an app
@@ -67,7 +57,7 @@ class QlikSense:
         Args:
             app: app to delete from the server
         """
-        services.delete_app(guid=app.guid, uow=self.uow)
+        services.delete_app(guid=app.id, uow=self.uow)
 
     def reload_app(self, app: 'models.App'):
         """
@@ -76,7 +66,7 @@ class QlikSense:
         Args:
             app: app to reload
         """
-        services.reload_app(guid=app.guid, uow=self.uow)
+        services.reload_app(guid=app.id, uow=self.uow)
 
     def copy_app(self, app: 'models.App', name: str = None):
         """
@@ -86,7 +76,7 @@ class QlikSense:
             app: app to copy
             name: optional name for the new app
         """
-        services.copy_app(guid=app.guid, name=name, uow=self.uow)
+        services.copy_app(guid=app.id, name=name, uow=self.uow)
 
     def download_app(self, app: 'models.App'):
         """
@@ -95,7 +85,7 @@ class QlikSense:
         Args:
             app: app to download
         """
-        services.download_app(guid=app.guid, uow=self.uow)
+        services.download_app(guid=app.id, uow=self.uow)
 
     def publish_app(self, app: 'models.App', stream: 'models.Stream'):
         """
@@ -105,7 +95,7 @@ class QlikSense:
             app: app to publish
             stream: stream to publish the app to
         """
-        services.publish_app(guid=app.guid, stream_guid=stream.guid, uow=self.uow)
+        services.publish_app(guid=app.id, stream_guid=stream.id, uow=self.uow)
 
     def replace_app(self, app: 'models.App', app_to_replace: 'models.App'):
         """
@@ -115,7 +105,7 @@ class QlikSense:
             app: app to copy
             app_to_replace: app to replace
         """
-        services.replace_app(guid=app.guid, guid_to_replace=app_to_replace.guid, uow=self.uow)
+        services.replace_app(guid=app.id, guid_to_replace=app_to_replace.id, uow=self.uow)
 
     def upload_app(self, file_name: str, app_name: str):
         """

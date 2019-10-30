@@ -39,4 +39,3 @@ class QSAPIRequest:
     url: str
     params: dict = None
     data: Union[str, list, dict] = None
-    file: iter = None

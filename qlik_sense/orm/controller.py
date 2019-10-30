@@ -188,7 +188,7 @@ class Controller:
         query = urllib.parse.urlencode(p, doseq=True, quote_via=urllib.parse.quote)
         return urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
 
-    def call(self, method: str, url: str, params: dict = None, data: str = None, files=None) -> 'requests.Response':
+    def call(self, method: str, url: str, params: dict = None, data: str = None) -> 'requests.Response':
         """
         All requests are routed through this method.
 
@@ -197,7 +197,6 @@ class Controller:
             url: the endpoint for the request
             params: the url parameters for the request
             data: data to be inserted in the body of the request
-            files: files to be inserted in the body of the request
 
         Returns: a Response object
         """
@@ -213,7 +212,6 @@ class Controller:
                                    url=updated_url,
                                    headers=updated_headers,
                                    data=data,
-                                   files=files,
                                    auth=self._session.auth)
         prepared_request = self._session.prepare_request(request)
 

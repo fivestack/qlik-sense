@@ -1,6 +1,5 @@
 """
-The domain models are very basic for now, as the core functionality is built out. Once more complicated
-functionality is required, these may grow.
+The models are very basic for now. They will grow as the core functionality is built out.
 """
 from dataclasses import dataclass, field
 from typing import Union
@@ -9,10 +8,12 @@ from typing import Union
 @dataclass(unsafe_hash=True)
 class Stream:
     """
-    Represents a Qlik Sense Stream
+    Represents a Qlik Sense stream
 
     Args:
-        guid: the guid of the stream on the server
+        id: the id of the stream on the server in uuid format
+        name: the name of the stream
+        privileges:
     """
     id: str = field(hash=True)
     name: str = field(default=None, hash=False)
@@ -25,8 +26,9 @@ class App:
     Represents a Qlik Sense application
 
     Args:
-        guid: the guid of the app on the server
+        id: the id of the app on the server in uuid format
         name: the name of the application
+        stream: the stream that contains the application
     """
     id: str = field(hash=True)
     name: str = field(default=None, hash=False)

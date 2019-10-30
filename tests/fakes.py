@@ -3,7 +3,8 @@ import json
 
 import uuid
 
-from .conftest import orm, models, abstract_repositories, unit_of_work
+from .conftest import orm, abstract_repositories, unit_of_work
+from qlik_sense.api_client import models
 
 
 class FakeAppSession(orm.AppSession):

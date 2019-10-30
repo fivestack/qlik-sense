@@ -2,7 +2,7 @@
 This module provides the mechanics for directly interacting with Qlik Sense apps. It uses a one-to-one model
 to wrap the QRS endpoints and uses marshmallow to parse the results into qlik_sense App objects.
 """
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional, Iterable
 from dataclasses import asdict
 import json
 
@@ -12,7 +12,7 @@ import marshmallow as ma
 from qlik_sense import models
 
 if TYPE_CHECKING:
-    from qlik_sense.orm.controller import Controller
+    from qlik_sense.client import Client
     import requests
 
 
@@ -41,19 +41,19 @@ class AppSchema(ma.Schema):
         return models.App(**data)
 
 
-class AppSession:
+class AppService:
     """
     AppSession wraps each one of the app-based QlikSense endpoints in a method. This buffers the application
     from API updates. It also allows for the Session class to be mocked for tests instead of the entire QRS API (or
     Controller class).
 
     Args:
-        controller: a Controller class that provides an interface over the QRS API
+        client: a Controller class that provides an interface over the QRS API
     """
     requests = None
 
-    def __init__(self, controller: 'Controller'):
-        self.controller = controller
+    def __init__(self, client: 'Client'):
+        self.client = client
         self.schema = AppSchema()
         self.url = '/qrs/app'
 
@@ -61,24 +61,28 @@ class AppSession:
         if request.data:
             if isinstance(request.data, dict) or isinstance(request.data, list):
                 request.data = json.dumps(request.data)
-        return self.controller.call(**asdict(request))
+        return self.client.call(**asdict(request))
 
-    def query(self, query_string: str) -> 'List[models.App]':
+    def query(self, query_string: str) -> 'Optional[List[models.App]]':
         request = models.QSAPIRequest(
             method='GET',
             url=f'{self.url}',
             params={'filter': query_string}
         )
         response = self._call(request)
-        return self.schema.loads(response.json())
+        if 200 <= response.status_code < 300:
+            return self.schema.loads(response.json())
+        return None
 
-    def query_one(self, id: str) -> 'models.App':
+    def query_one(self, id: str) -> 'Optional[models.App]':
         request = models.QSAPIRequest(
             method='GET',
             url=f'{self.url}/{id}'
         )
         response = self._call(request)
-        return self.schema.loads(response.json())
+        if 200 <= response.status_code < 300:
+            return self.schema.loads(response.json())
+        return None
 
     def update(self, app: 'models.App'):
         request = models.QSAPIRequest(
@@ -143,7 +147,7 @@ class AppSession:
         )
         self._call(request)
 
-    def download_file(self, url: str) -> iter:
+    def download_file(self, url: str) -> Iterable:
         request = models.QSAPIRequest(
             method='GET',
             url=url

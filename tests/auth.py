@@ -1,3 +1,4 @@
 
 HOST = ''
 CERTIFICATE = ''
+USER = {}

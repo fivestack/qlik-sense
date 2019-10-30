@@ -1,24 +1,18 @@
-from typing import TYPE_CHECKING
 from pathlib import Path
 from os.path import isfile
 
-from .conftest import orm, models, services, PROJECT_ROOT
-from .fakes import FakeUnitOfWork
-
-if TYPE_CHECKING:
-    from .conftest import unit_of_work
+from .conftest import models, Client, PROJECT_ROOT
 
 
-def uow_factory() -> 'unit_of_work.AbstractUnitOfWork':
-    controller = orm.Controller(log_name='qlik_sense_test',
-                                verbosity='DEBUG',
-                                schema='https',
-                                host='localhost',
-                                port=80)
-    return FakeUnitOfWork(controller=controller)
+def client_factory() -> 'Client':
+    return Client(log_name='qlik_sense_test',
+                  verbosity='DEBUG',
+                  schema='https',
+                  host='localhost',
+                  port=80)
 
 
-def add_app(uow: 'unit_of_work.AbstractUnitOfWork',
+def add_app(client: 'Client',
             app_id: str = None, app_name: str = None, stream_id: str = None, stream_name: str = None):
     if stream_id or stream_name:
         stream = models.Stream(id=stream_id, name=stream_name)
@@ -29,7 +23,7 @@ def add_app(uow: 'unit_of_work.AbstractUnitOfWork',
 
 class TestApp:
 
-    uow = uow_factory()
+    app_service = client_factory().app
 
     def setup_method(self):
         add_app(uow=self.uow, app_id='app_1', app_name='My App', stream_id='stream_1', stream_name='My Stream')
@@ -39,40 +33,38 @@ class TestApp:
 
     def teardown_method(self):
         try:
-            app = services.get_app(id='app_1', uow=self.uow)
+            app = self.app_service.query_one(id='app_1')
             file = PROJECT_ROOT / Path(f'{app.name}.qvf')
             try:
                 file.unlink()
             except FileNotFoundError:
                 pass
-            services.delete_app(id='app_1', uow=self.uow)
-            services.delete_app(id='app_2', uow=self.uow)
-            services.delete_app(id='app_3', uow=self.uow)
+            self.app_service.delete(id='app_1')
+            self.app_service.delete(id='app_2')
+            self.app_service.delete(id='app_3')
         except AttributeError:
             pass
 
     def test_get_app_by_name_and_stream(self):
-        found_app = services.get_app_by_name_and_stream_name(app_name='My App', stream_name='My Stream', uow=self.uow)
+        found_app = self.app_service.get_app_by_name_and_stream_name(app_name='My App', stream_name='My Stream')
         assert 'app_1' == found_app.id
 
     def test_get_app_by_guid(self):
-        found_app = services.get_app(id='app_2', uow=self.uow)
+        found_app = self.app_service.query_one(id='app_2')
         assert 'Not My App' == found_app.name
 
     def test_get_app_by_name_and_stream_missing(self):
-        missing_app = services.get_app_by_name_and_stream_name(app_name='Another App',
-                                                               stream_name='My Stream',
-                                                               uow=self.uow)
+        missing_app = self.app_service.get_app_by_name_and_stream_name(app_name='Another App', stream_name='My Stream')
         assert None is missing_app
 
     def test_get_app_by_guid_missing(self):
-        missing_app = services.get_app(id='app_4', uow=self.uow)
+        missing_app = self.app_service.query_one(id='app_4')
         assert None is missing_app
 
     def test_delete_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
-        services.delete_app(id=app.id, uow=self.uow)
-        get_app_again = services.get_app(id='app_1', uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
+        self.app_service.delete(id=app.id)
+        get_app_again = self.app_service.query_one(id='app_1')
         assert None is get_app_again
         request = models.QSAPIRequest(
             method='DELETE',
@@ -81,8 +73,8 @@ class TestApp:
         assert request in self.uow.apps.session.requests
 
     def test_reload_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
-        services.reload_app(id=app.id, uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
+        self.app_service.reload(id=app.id)
         request = models.QSAPIRequest(
             method='POST',
             url=f'/qrs/app/{app.id}/reload'
@@ -90,8 +82,8 @@ class TestApp:
         assert request in self.uow.apps.session.requests
 
     def test_copy_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
-        services.copy_app(id=app.id, name=app.name, uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
+        self.app_service.copy(id=app.id, name=app.name)
         request = models.QSAPIRequest(
             method='POST',
             url=f'/qrs/app/{app.id}/copy',
@@ -100,8 +92,8 @@ class TestApp:
         assert request in self.uow.apps.session.requests
 
     def test_download_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
-        services.download_app(id=app.id, uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
+        self.app_service.download(id=app.id)
         file = PROJECT_ROOT / Path(f'{app.name}.qvf')
         assert isfile(file.absolute())
         for request in self.uow.apps.session.requests:
@@ -110,9 +102,9 @@ class TestApp:
                 assert f'qrs/app/{app.id}/export' == '/'.join(url.split('/')[1:5])
 
     def test_publish_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
         stream = models.Stream(id='stream_1', name='My Stream')
-        services.publish_app(id=app.id, stream_id=stream.id, uow=self.uow)
+        self.app_service.publish(id=app.id, stream_id=stream.id)
         request = models.QSAPIRequest(
             method='PUT',
             url=f'/qrs/app/{app.id}/publish',
@@ -121,9 +113,9 @@ class TestApp:
         assert request in self.uow.apps.session.requests
 
     def test_replace_app(self):
-        app = services.get_app(id='app_1', uow=self.uow)
-        app_to_replace = services.get_app(id='app_2', uow=self.uow)
-        services.replace_app(id=app.id, id_to_replace=app_to_replace.id, uow=self.uow)
+        app = self.app_service.query_one(id='app_1')
+        app_to_replace = self.app_service.query_one(id='app_2')
+        self.app_service.replace(id=app.id, id_to_replace=app_to_replace.id)
         request = models.QSAPIRequest(
             method='PUT',
             url=f'/qrs/app/{app.id}/replace',
@@ -134,7 +126,7 @@ class TestApp:
     def test_upload_app(self):
         file_name = Path(__file__).absolute()
         app_name = 'My New App'
-        services.upload_app(file_name=file_name, app_name=app_name, uow=self.uow)
+        self.app_service.upload(file_name=file_name, app_name=app_name)
         for request in self.uow.apps.session.requests:
             if request.method == 'POST':
                 assert request.url == '/qrs/app/upload'

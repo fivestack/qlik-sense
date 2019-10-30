@@ -6,4 +6,4 @@ PROJECT_ROOT = PACKAGE_ROOT.parent
 
 sys.path.insert(0, str(PROJECT_ROOT.absolute()))
 
-from qlik_sense import orm, models, abstract_repositories, unit_of_work, services, api
+from qlik_sense import models, services, Client

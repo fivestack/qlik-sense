@@ -6,8 +6,13 @@
 
 # Overview
 
-This library is being developed so that Qlik Sense applications can be worked into a larger
-python workflow more easily. While Qlik's API could be used directly, this streamlines the process.
+This library allows users to work with Qlik Sense applications in a larger python workflow more easily. While Qlik's
+API could be used directly, this streamlines the process.
+
+#### Disclaimer:
+
+This library, and its maintainer, have no affiliation with QlikTech. Qlik support agreement does not cover
+support for this application.
 
 # Requirements
 
@@ -30,7 +35,8 @@ pip install qlik_sense
 
 Use this library to reload a Qlik Sense app:
 ```python
-from qlik_sense import api
+
+from qlik_sense.example_app import api
 
 qs = api.QlikSense(host='HOST_NAME', certificate='CERT_FILE_PATH')
 

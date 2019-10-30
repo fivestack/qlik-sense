@@ -1,7 +1,7 @@
 """
-The controller class is an interface over the QlikSense APIs. It is boiled down to a generic set of calls to
-the main REST methods (GET, POST, PUT, DELETE). The controller sets up authentication, logging, and base
-settings for interacting with the QlikSense APIs.
+The client class is an interface over the QlikSense APIs. It is boiled down to a generic set of calls to
+the main REST methods (GET, POST, PUT, DELETE). The client sets up authentication, logging, and base
+settings for interacting with the QlikSense APIs. All calls are passed to appropriate lower level services.
 """
 import logging
 from typing import Union
@@ -15,8 +15,10 @@ import urllib3
 import requests
 from requests_ntlm import HttpNtlmAuth
 
+from qlik_sense import services
 
-class Controller:
+
+class Client:
     """
     An interface over the QlikSense APIs
 
@@ -49,6 +51,8 @@ class Controller:
         if not self._verify:
             urllib3.disable_warnings()
 
+        self.app = services.AppService(self)
+
     def _set_logger(self, log_name: str, verbosity: str):
         """
         Sets up logger for the controller
@@ -79,14 +83,15 @@ class Controller:
         if certificate and user:
             self._log.debug('INVALID authentication provided')
             raise AttributeError('Provide only one of certificate (for PEM) and user (for NTLM)')
+        elif user:
+            self._log.debug('NTLM authentication enabled')
         elif certificate:
             self._log.debug('PEM authentication enabled')
             self._set_cert(certificate=certificate)
-        elif user:
-            self._log.debug('NTLM authentication enabled')
-            self._set_user(user=user)
+            user = {'directory': None, 'username': None, 'password': None}
         else:
             self._log.debug('NO authentication enabled')
+        self._set_user(user=user)
 
     def _set_cert(self, certificate: str):
         """
@@ -154,7 +159,7 @@ class Controller:
             updated_headers.update(headers)
         return headers
 
-    def _prepare_request(self, url: str, params: dict, headers: dict) -> tuple:
+    def _prepare_request(self, url: str, params: dict) -> tuple:
         """
         Builds the url, url parameters, and headers for the request
 
@@ -166,7 +171,7 @@ class Controller:
         Returns: a tuple with the updated url, url parameters, and headers
         """
         updated_params = self._prepare_params(params=params)
-        headers['x-Qlik-Xrfkey'] = updated_params.get('Xrfkey')
+        headers = {'x-Qlik-Xrfkey': updated_params.get('Xrfkey')}
         updated_headers = self._prepare_headers(headers=headers)
         updated_url = self._update_params(url=urllib.parse.urljoin(self._baseurl, url), params=updated_params)
         return updated_url, updated_params, updated_headers
@@ -200,13 +205,14 @@ class Controller:
 
         Returns: a Response object
         """
+        print()
+        print(f'url = {url}')
+        print(f'params = {params}')
         self._log.info(f'API {method} <{url}>')
-        updated_url, updated_params, updated_headers = self._prepare_request(
-            url=url,
-            params=params,
-            headers={'Content-Type': 'application/vnd.qlik.sense.app'}
-        )
-
+        updated_url, updated_params, updated_headers = self._prepare_request(url=url, params=params)
+        print(f'updated_url = {updated_url}')
+        print(f'updated_params = {updated_params}')
+        print(f'updated_headers = {updated_headers}')
         self._log.debug(f'__PREPARED: {updated_url}')
         request = requests.Request(method=method,
                                    url=updated_url,
@@ -215,7 +221,7 @@ class Controller:
                                    auth=self._session.auth)
         prepared_request = self._session.prepare_request(request)
 
-        self._log.debug(f'SEND: {request.url}')
+        self._log.info(f'SEND: {request.headers} {request.url}')
         response = self._session.send(request=prepared_request,
                                       cert=self._cert,
                                       verify=self._verify,
@@ -229,10 +235,10 @@ class Controller:
             response.next.prepare_headers(updated_headers)
             response.next.prepare_cookies(response.cookies)
             response.next.url = self._update_params(url=response.next.url, params=updated_params)
-            self._log.debug(f'REDIR: {response.next.url}')
+            self._log.info(f'REDIR: {response.next.url}')
             response = self._session.send(request=response.next,
                                           verify=self._verify,
                                           allow_redirects=False)
 
-        self._log.debug(f'RECEIVED: {response.text}')
+        self._log.info(f'RECEIVED: {response.text}')
         return response

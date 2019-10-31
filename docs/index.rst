@@ -17,64 +17,41 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-API
-===
+Client
+======
 
-.. automodule:: qlik_sense.api
+.. automodule:: qlik_sense.client
    :members:
-   :private-members:
-
-Service Layer
-=============
 
 Services
---------
+========
 
-.. automodule:: qlik_sense.services
+App
+---
+
+.. automodule:: qlik_sense.services.app
    :members:
-   :private-members:
-
-Unit of Work
-------------
-
-.. automodule:: qlik_sense.unit_of_work
-   :members:
-   :private-members:
 
 Domain Models
 =============
 
 .. automodule:: qlik_sense.models
    :members:
-   :private-members:
 
-Repositories
-============
+Full Documentation
+==================
 
-App
----
+Client
+------
 
-.. automodule:: qlik_sense.repositories.app_qlik_sense
-   :members:
-   :private-members:
-
-ORM
-===
-
-.. automodule:: qlik_sense.orm
-   :members:
-   :private-members:
-
-Controller
-----------
-
-.. automodule:: qlik_sense.orm.controller
+.. automodule:: qlik_sense.client
    :members:
    :private-members:
 
 App
 ---
 
-.. automodule:: qlik_sense.orm.app
+.. automodule:: qlik_sense.services.app
    :members:
    :private-members:
+

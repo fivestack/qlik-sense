@@ -1,13 +1,13 @@
 # Qlik Sense
 
-**This library provides tools to interact with Qlik Sense's APIs natively in python.**
+**This library is a python client for the Qlik Sense APIs**
 
 ---
 
 # Overview
 
-This library allows users to work with Qlik Sense applications in a larger python workflow more easily. While Qlik's
-API could be used directly, this streamlines the process.
+This library allows users to more easily work with Qlik Sense applications in a larger python workflow. While Qlik's
+APIs could be used directly, this streamlines the process.
 
 #### Disclaimer:
 
@@ -36,12 +36,16 @@ pip install qlik_sense
 Use this library to reload a Qlik Sense app:
 ```python
 
-from qlik_sense.example_app import api
+from qlik_sense import Client
 
-qs = api.QlikSense(host='HOST_NAME', certificate='CERT_FILE_PATH')
-
-app = qs.get_app_by_name_and_stream(app_name='Rate Monitor', stream_name='Actuarial')
-qs.reload_app(app)
+user = {
+    'directory': 'DIRECTORY',
+    'username': 'USERNAME',
+    'password': 'PASSWORD'
+}
+qs = Client(schema='https', host='local_host', port=80, user=user)
+app = qs.app.get_by_name_and_stream(app_name='My App', stream_name='My Stream')
+qs.app.reload(app)
 ```
 
 # Acknowledgements
@@ -51,8 +55,7 @@ This package was inspired by Rafael Sanz's work:
 https://github.com/rafael-sanz/qsAPI/blob/master/qsAPI.py
 
 I would like to acknowledge the work he spent to figure out all of the logistics of Qlik Sense's APIs.
-I redeployed a modified version of his Controller and QRS (Sessions here) classes in the ORM for this library
-and built functionality around them.
+I used modified versions of his Controller (Client) and QRS/QPS (___Service) classes in this library.
 
 # Full Documentation
 

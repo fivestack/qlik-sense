@@ -1,4 +1,9 @@
 
+SCHEMA = 'https'
 HOST = ''
-CERTIFICATE = ''
-USER = {}
+PORT = 443
+USER = {
+    'directory': '',
+    'username': '',
+    'password': ''
+}

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from .conftest import models
+import qlik_sense.services.util
+import qlik_sense.models.stream
 from .fakes import FakeAppService
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ class TestApp:
     def test_query(self):
         query_string = 'find my app'
         self.client.app.query(query_string=query_string)
-        request = models.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='GET',
             url=f'/qrs/app',
             params={'filter': query_string}
@@ -37,7 +38,7 @@ class TestApp:
 
     def test_get_by_name_and_stream(self):
         self.client.app.get_by_name_and_stream(app_name='My App', stream_name='My Stream')
-        request = models.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='GET',
             url=f'/qrs/app',
             params={'filter': "name eq 'My App' and stream.name eq 'My Stream'"}
@@ -46,7 +47,7 @@ class TestApp:
 
     def test_get(self):
         self.client.app.get(id='app_2')
-        request = models.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='GET',
             url=f'/qrs/app/app_2'
         )
@@ -55,7 +56,7 @@ class TestApp:
     def test_update(self):
         app = self.client.app.get_fake_app(id='app_1')
         self.client.app.update(app=app)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='PUT',
             url=f'/qrs/app/{app.id}'
         )
@@ -64,7 +65,7 @@ class TestApp:
     def test_delete(self):
         app = self.client.app.get_fake_app(id='app_1')
         self.client.app.delete(app=app)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='DELETE',
             url=f'/qrs/app/{app.id}'
         )
@@ -73,7 +74,7 @@ class TestApp:
     def test_reload(self):
         app = self.client.app.get_fake_app(id='app_1')
         self.client.app.reload(app=app)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='POST',
             url=f'/qrs/app/{app.id}/reload'
         )
@@ -82,7 +83,7 @@ class TestApp:
     def test_copy(self):
         app = self.client.app.get_fake_app(id='app_1')
         self.client.app.copy(app=app, name=app.name)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='POST',
             url=f'/qrs/app/{app.id}/copy',
             params={'name': app.name}
@@ -99,9 +100,9 @@ class TestApp:
 
     def test_publish(self):
         app = self.client.app.get_fake_app(id='app_1')
-        stream = models.Stream(id='stream_1', name='My Stream')
+        stream = qlik_sense.models.stream.Stream(id='stream_1', name='My Stream')
         self.client.app.publish(app=app, stream=stream)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='PUT',
             url=f'/qrs/app/{app.id}/publish',
             params={'stream': stream.id}
@@ -112,7 +113,7 @@ class TestApp:
         app = self.client.app.get_fake_app(id='app_1')
         app_to_replace = self.client.app.get_fake_app(id='app_2')
         self.client.app.replace(app=app, app_to_replace=app_to_replace)
-        request = models.QSAPIRequest(
+        request = app.QSAPIRequest(
             method='PUT',
             url=f'/qrs/app/{app.id}/replace',
             params={'app': app_to_replace.id}
@@ -122,7 +123,7 @@ class TestApp:
     def test_download_file(self):
         url = 'path/to/my/download'
         self.client.app.download_file(url=url)
-        request = models.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='GET',
             url=f'/qrs/app/{url}'
         )

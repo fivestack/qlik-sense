@@ -11,7 +11,7 @@ from qlik_sense.models import app, stream
 from qlik_sense.services import util
 
 if TYPE_CHECKING:
-    from qlik_sense.client import Client
+    from qlik_sense.clients.client import Client
     import requests
 
 

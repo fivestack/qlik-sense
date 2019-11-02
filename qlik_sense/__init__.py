@@ -2,4 +2,4 @@
 __version__ = "0.2.0"
 name = 'qlik_sense'
 
-from .client import Client
+from qlik_sense.clients import NTLMClient, SSLClient

@@ -10,10 +10,10 @@ from typing import Optional, Union
 import requests
 from requests_ntlm import HttpNtlmAuth
 
-from qlik_sense.clients import client
+from qlik_sense.clients import base
 
 
-class NTLMClient(client.Client):
+class NTLMClient(base.Client):
     """
     An interface over the QlikSense APIs
 

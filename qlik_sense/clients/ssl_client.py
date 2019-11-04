@@ -11,10 +11,10 @@ from typing import Optional, Union
 import urllib3
 import requests
 
-from qlik_sense.clients import client
+from qlik_sense.clients import base
 
 
-class SSLClient(client.Client):
+class SSLClient(base.Client):
     """
     An interface over the QlikSense APIs that uses SSL authentication
 

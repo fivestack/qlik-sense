@@ -30,6 +30,26 @@ class AppCondensed:
     availability_status: str = field(default=None, hash=False)
 
 
+class AppCondensedSchema(ma.Schema):
+    """
+    A marshmallow schema corresponding to a Qlik Sense App object with limited attribution
+    """
+    id = ma.fields.UUID(required=False)
+    privileges = ma.fields.List(cls_or_instance=str, required=False)
+    name = ma.fields.Str(required=True)
+    app_id = ma.fields.Str(required=False, data_key='appId')
+    published_date = ma.fields.DateTime(required=False, data_key='publishTime')
+    is_published = ma.fields.Bool(required=False, data_key='published')
+    stream = ma.fields.Nested(StreamCondensedSchema, many=False, required=False)
+    saved_in_product_version = ma.fields.Str(required=False, data_key='savedInProductVersion')
+    migration_hash = ma.fields.Str(required=False, data_key='migrationHash')
+    availability_status = ma.fields.Str(required=False, data_key='availabilityStatus')
+
+    @ma.post_load()
+    def post_load(self, data: dict, **kwargs) -> 'AppCondensed':
+        return AppCondensed(**data)
+
+
 @dataclass(unsafe_hash=True)
 class App(AppCondensed):
     """
@@ -49,26 +69,6 @@ class App(AppCondensed):
     last_reload_time: datetime = field(default=None, hash=False)
     thumbnail: str = field(default=None, hash=False)
     dynamic_color: str = field(default=None, hash=False)
-
-
-class AppCondensedSchema(ma.Schema):
-    """
-    A marshmallow schema corresponding to a Qlik Sense App object with limited attribution
-    """
-    id = ma.fields.UUID(required=False)
-    privileges = ma.fields.List(cls_or_instance=str, required=False)
-    name = ma.fields.Str(required=True)
-    app_id = ma.fields.Str(required=False, data_key='appId')
-    published_date = ma.fields.DateTime(required=False, data_key='publishTime')
-    is_published = ma.fields.Bool(required=False, data_key='published')
-    stream = ma.fields.Nested(StreamCondensedSchema, many=False, required=False)
-    saved_in_product_version = ma.fields.Str(required=False, data_key='savedInProductVersion')
-    migration_hash = ma.fields.Str(required=False, data_key='migrationHash')
-    availability_status = ma.fields.Str(required=False, data_key='availabilityStatus')
-
-    @ma.post_load()
-    def post_load(self, data: dict, **kwargs) -> 'AppCondensed':
-        return AppCondensed(**data)
 
 
 class AppSchema(AppCondensedSchema):
@@ -94,3 +94,30 @@ class AppSchema(AppCondensedSchema):
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'App':
         return App(**data)
+
+
+@dataclass(unsafe_hash=True)
+class AppExport:
+    """
+    Represents a Qlik Sense App Export
+    """
+    schema_path: str = field(default=None, hash=False)
+    export_token: str = field(default=None, hash=True)
+    app_id: str = field(default=None, hash=True)
+    download_path: str = field(default=None, hash=False)
+    is_cancelled: bool = field(default=False, hash=True)
+
+
+class AppExportSchema(ma.Schema):
+    """
+    A marshmallow schema corresponding to a Qlik Sense App Export object
+    """
+    schema_path = ma.fields.Str(required=False, data_key='schemaPath')
+    export_token = ma.fields.UUID(required=True, data_key='exportToken')
+    app_id = ma.fields.UUID(required=True, data_key='appId')
+    download_path = ma.fields.Str(required=False, data_key='downloadPath')
+    is_cancelled = ma.fields.Bool(required=True, data_key='cancelled')
+
+    @ma.post_load()
+    def post_load(self, data: dict, **kwargs) -> 'AppExport':
+        return AppExport(**data)

@@ -7,12 +7,12 @@ from dataclasses import asdict
 
 import uuid
 
-from qlik_sense.models.app import AppCondensedSchema, AppSchema
+from qlik_sense.models.app import AppCondensedSchema, AppSchema, AppExportSchema
 from qlik_sense.services import util
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
-    from qlik_sense.models.app import AppCondensed, App
+    from qlik_sense.models.app import AppCondensed, App, AppExport
     from qlik_sense.models.stream import StreamCondensed
     import requests
 
@@ -258,7 +258,7 @@ class AppService:
             return schema.loads(response.json())
         return None
 
-    def prepare_export(self, app: 'AppCondensed', keep_data: bool = False) -> 'Optional[str]':
+    def create_export(self, app: 'AppCondensed', keep_data: bool = False) -> 'Optional[AppExport]':
         """
         This method returns a download path for the provided app. It can be passed into download_file() to obtain
         the app itself
@@ -267,10 +267,9 @@ class AppService:
             app: app to export
             keep_data: indicates if the data should be exported with the app
 
-        Returns: the download path extension for the app (i.e. localhost/qrs/app/{returns this piece})
-
-        TODO: create export object/schema and return that
+        Returns: the app export object that contains attributes like download_path and export_token
         """
+        schema = AppExportSchema()
         token = uuid.uuid4()
         request = util.QSAPIRequest(
             method='POST',
@@ -279,7 +278,7 @@ class AppService:
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return response.json()['downloadPath']
+            return schema.loads(response.json())
         return None
 
     def unpublish(self, app: 'AppCondensed') -> 'Optional[App]':
@@ -301,21 +300,22 @@ class AppService:
             return schema.loads(response.json())
         return None
 
-    def delete_export(self, app: 'AppCondensed', token: 'uuid.UUID'):
+    def delete_export(self, app_export: 'AppExport') -> 'Optional[AppExport]':
         """
-        This method cancels the download path for the provided app.
+        This method cancels the export for the provided app.
 
         Args:
-            app: app originally getting exported
-            token: download token
-
-        TODO: accept prepare_export() output instead of app/token
+            app_export: app export metadata, contains the app getting exported and the export token
         """
+        schema = AppExportSchema()
         request = util.QSAPIRequest(
             method='DELETE',
-            url=f'{self.url}/{app.id}/export/{token}'
+            url=f'{self.url}/{app_export.app_id}/export/{app_export.export_token}'
         )
-        self._call(request)
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return schema.loads(response.json())
+        return None
 
     def publish(self, app: 'AppCondensed', stream: 'StreamCondensed', name: str = None) -> 'Optional[App]':
         """
@@ -364,20 +364,18 @@ class AppService:
             return schema.loads(response.json())
         return None
 
-    def download_file(self, url: str) -> 'Optional[Iterable]':
+    def download_file(self, app_export: 'AppExport') -> 'Optional[Iterable]':
         """
         This method downloads an app given a download link
 
         Args:
-            url: download path extension for the app (i.e., localhost/qrs/app/{this piece}
+            app_export: app export metadata, contains the app getting exported, the download path, and the export token
 
         Returns: the file as an iterable
-
-        TODO: accept prepare_export() output instead of hard coded url, add option to auto-delete on success
         """
         request = util.QSAPIRequest(
             method='GET',
-            url=f'{self.url}/{url}'
+            url=f'{self.url}/{app_export.download_path}'
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:

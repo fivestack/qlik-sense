@@ -92,7 +92,7 @@ class TestApp:
 
     def test_export(self):
         app = self.client.app.get_fake_app(id='app_1')
-        self.client.app.prepare_export(app=app)
+        self.client.app.create_export(app=app)
         for request in self.client.app.requests:
             if request.method == 'POST':
                 url = request.url

@@ -77,7 +77,7 @@ class AppService(base.BaseService):
             order_by: an order by string
             privileges:
             full_attribution: allows the response to contain the full user attribution,
-            defaults to False (limited attribution)
+                defaults to False (limited attribution)
 
         Returns: a list of Qlik Sense Apps that meet the query_string criteria (or None)
         """

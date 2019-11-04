@@ -75,7 +75,7 @@ class UserSchema(UserCondensedSchema, EntitySchema):
     """
     custom_properties = ma.fields.Nested(nested=CustomPropertyValueSchema, many=True, required=False,
                                          data_key='customProperties')
-    roles = ma.fields.List(cls_or_instance=str, required=False)
+    roles = ma.fields.List(cls_or_instance=ma.fields.Str, required=False)
     attributes = ma.fields.Nested(UserAttributeSchema, many=True, required=False)
     is_inactive = ma.fields.Bool(required=False, data_key='inactive')
     is_removed_externally = ma.fields.Bool(required=True, data_key='removedExternally')

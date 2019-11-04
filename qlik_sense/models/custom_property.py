@@ -20,7 +20,7 @@ class CustomPropertyDefinitionCondensedSchema(EntityCondensedSchema):
     A marshmallow schema corresponding to a Qlik Sense Custom Property Definition object with limited attribution
     """
     value_type = ma.fields.Str(required=True, data_key='valueType')
-    value_choices = ma.fields.List(cls_or_instance=str, required=False, data_key='choiceValues')
+    value_choices = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, data_key='choiceValues')
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'CustomPropertyDefinitionCondensed':
@@ -40,7 +40,7 @@ class CustomPropertyDefinitionSchema(CustomPropertyDefinitionCondensedSchema, En
     """
     A marshmallow schema corresponding to a Qlik Sense Custom Property Definition object with full attribution
     """
-    object_types = ma.fields.List(cls_or_instance=str, required=False, data_key='objectTypes')
+    object_types = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, data_key='objectTypes')
     description = ma.fields.Str(required=False)
 
     @ma.post_load()

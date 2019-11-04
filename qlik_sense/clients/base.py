@@ -144,6 +144,16 @@ class Client(abc.ABC):
 
     def _handle_redirect(self, response: 'requests.Response', headers: dict,
                          session: 'requests.Session') -> 'requests.Response':
+        """
+        Handles redirects for the request. This happens when using the proxy service.
+
+        Args:
+            response: the response with a redirect
+            headers: the original headers from the original request
+            session: the session
+
+        Returns: the final response with no redirect
+        """
         count = 0
         while response.is_redirect:
             _logger.debug('f__REDIRECT ENCOUNTERED')

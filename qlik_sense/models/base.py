@@ -16,7 +16,7 @@ class Auditing:
     schema_path: str = field(default=None, hash=False)
 
 
-class AuditingSchema(ma.schema):
+class AuditingSchema(ma.Schema):
     """
     A marshmallow schema corresponding to Qlik Sense auditing fields
     """
@@ -41,7 +41,7 @@ class EntityCondensedSchema(ma.Schema):
     A marshmallow schema corresponding to a Qlik Sense Stream object with limited attribution
     """
     id = ma.fields.UUID(required=False)
-    privileges = ma.fields.List(cls_or_instance=str, required=False)
+    privileges = ma.fields.List(cls_or_instance=ma.fields.Str, required=False)
     name = ma.fields.Str(required=True)
 
 

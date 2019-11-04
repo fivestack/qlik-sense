@@ -126,7 +126,7 @@ class Client(abc.ABC):
                                    auth=self._auth)
         return request.prepare()
 
-    def _send_request(self, request: 'requests.PreparedRequest') -> 'requests.Response':
+    def _send_request(self, request: 'requests.PreparedRequest', session: 'requests.Session') -> 'requests.Response':
         """
         Executes the call
 
@@ -137,11 +137,25 @@ class Client(abc.ABC):
         """
         _logger.debug(f'__SEND REQUEST {request.method} <{request.url}>'
                       f' headers={request.headers} body_size={len(request.body())}')
-        session = requests.Session()
         return session.send(request=request,
                             cert=self._cert,
                             verify=self._verify,
-                            allow_redirects=True)
+                            allow_redirects=False)
+
+    def _handle_redirect(self, response: 'requests.Response', headers: dict,
+                         session: 'requests.Session') -> 'requests.Response':
+        count = 0
+        while response.is_redirect:
+            _logger.debug('f__REDIRECT ENCOUNTERED')
+            count += 1
+            if count > session.max_redirects:
+                raise requests.HTTPError('Exceeded max redirects')
+            request = response.next
+            session.rebuild_auth(prepared_request=request, response=response)
+            request.prepare_headers(headers=headers)
+            request.prepare_cookies(cookies=response.cookies)
+            response = self._send_request(request=request, session=session)
+        return response
 
     def call(self, method: str, url: str, params: 'Optional[dict]' = None,
              data: 'Optional[Union[str, list, dict]]' = None) -> 'requests.Response':
@@ -158,6 +172,10 @@ class Client(abc.ABC):
         """
         _logger.info(f'API CALL {method} <{url}> params={params} data={len(data) if data else None}')
         prepared_request = self._get_prepared_request(method=method, url=url, params=params, data=data)
-        response = self._send_request(prepared_request)
+        session = requests.Session()
+        response = self._send_request(request=prepared_request, session=session)
+        if response.is_redirect:
+            response = self._handle_redirect(response=response, headers=prepared_request.headers, session=session)
+
         _logger.debug(f'__RESPONSE RECEIVED {response.text} headers={response.headers}')
         return response

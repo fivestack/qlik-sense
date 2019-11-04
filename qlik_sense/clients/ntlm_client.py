@@ -28,7 +28,7 @@ class NTLMClient(base.Client):
         password: the password for the user
     """
 
-    def __init__(self, scheme: str, host: str, port: int = 443,
+    def __init__(self, scheme: str, host: str, port: int = None,
                  domain: str = None, username: str = None, password: str = None):
         super().__init__(scheme=scheme, host=host, port=port)
 

@@ -3,15 +3,16 @@ The Client class is an interface over the QlikSense APIs. The client sets up aut
 settings for interacting with the Qlik Sense APIs. All calls are configured by appropriate lower level services and
 then passed up to this class to execute.
 """
+import logging
+import sys
 import os.path
-import random
-import string
-from typing import Optional, Union
 
 import urllib3
-import requests
 
 from qlik_sense.clients import base
+
+_logger = logging.getLogger(__name__)
+_logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class SSLClient(base.Client):
@@ -21,66 +22,41 @@ class SSLClient(base.Client):
     Args:
         scheme: http/https
         host: hostname to connect to
-        port: port number
+        port: port number, defaults to 4242
         certificate: path to .pem client certificate
         verify: false to trust in self-signed certificates
-        log_name: logger instance name
-        verbosity: level of logging, one of [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
+        directory: directory for the user
+        user: user, in lieu of admin, whose permissions should be used to execute the request
     """
+    _qlik_user = None
 
-    def __init__(self,
-                 scheme: str, host: str, port: int,
+    def __init__(self, scheme: str, host: str, port: int = 4242,
                  certificate: str = None, verify: bool = False,
-                 log_name: str = None, verbosity: int = None):
-        super().__init__(scheme=scheme, host=host, port=port, log_name=log_name, verbosity=verbosity)
+                 directory: str = None, user: str = None):
+        super().__init__(scheme=scheme, host=host, port=port)
 
-        self._log.debug('__SET AUTH')
-        self._set_ssl_auth(certificate=certificate, verify=verify)
-
-    def _set_ssl_auth(self, certificate: str, verify: bool = False):
-        """
-        Sets up SSL authentication
-
-        Args:
-            certificate: path to .pem client certificate
-            verify: false to trust in self-signed certificates
-        """
+        _logger.debug('__SET SSL AUTH')
         path, ext = os.path.splitext(certificate)
         self._cert = f'{path}{ext}', f'{path}_key{ext}'
         self._verify = verify
         if not verify:
             urllib3.disable_warnings()
 
-    def call(self, method: str, url: str, params: 'Optional[dict]' = None,
-             data: 'Optional[Union[str, list, dict]]' = None) -> 'requests.Response':
+        _logger.debug(f'__SET USER directory={directory} user={user}')
+        if directory and user:
+            self._qlik_user = f'UserDirectory={directory};UserId={user}'
+
+    def _get_headers(self, xrf_key: str) -> dict:
         """
-        All requests are routed through this method
+        Gets the default headers that all requests need (including Xrfkey) and adds in headers that SSL
+        authentication uses, such as a user to run as.
 
         Args:
-            method: REST method, one of ['GET', 'POST', 'PUT', 'DELETE']
-            url: the relative endpoint for the request (e.g. /qrs/app/)
-            params: the query string parameters for the request
-            data: data to be inserted in the body of the request
+            xrf_key: the csrf key
 
-        Returns: a Response object
+        Returns: the headers for the request as a dictionary
         """
-        self._log.info(f'API CALL {method} <{url}> params={params} data={len(data) if data else None}')
-
-        self._log.debug(f'__PREPARE REQUEST')
-        xrf_key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(16))
-        request = requests.Request(method=method,
-                                   url=self._get_url(url=url),
-                                   headers=self._get_headers(xrf_key=xrf_key),
-                                   data=self._get_data(data),
-                                   params=self._get_params(xrf_key=xrf_key, params=params))
-        prepared_request = request.prepare()
-
-        self._log.debug(f'__SEND REQUEST headers={request.headers} <{request.url}>')
-        session = requests.Session()
-        response = session.send(request=prepared_request,
-                                cert=self._cert,
-                                verify=self._verify,
-                                allow_redirects=False)
-
-        self._log.debug(f'__RESPONSE RECEIVED {response.text}')
-        return response
+        headers = super()._get_headers(xrf_key=xrf_key)
+        if self._qlik_user:
+            headers.update({'X-Qlik-User': self._qlik_user})
+        return headers

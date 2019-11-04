@@ -19,6 +19,7 @@ support for this application.
 - Python 3.7+
 - requests
 - requests_ntlm
+- requests_negotiate_sspi
 - urllib3
 - uuid
 - marshmallow

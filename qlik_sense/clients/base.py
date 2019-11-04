@@ -8,11 +8,16 @@ import sys
 from typing import Optional, Union
 import json
 import abc
+import random
+import string
 
 from urllib3.util import Url
 import requests
 
 from qlik_sense import services
+
+_logger = logging.getLogger(__name__)
+_logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class Client(abc.ABC):
@@ -23,40 +28,21 @@ class Client(abc.ABC):
         scheme: http/https
         host: hostname to connect to
         port: port number
-        log_name: logger instance name
-        verbosity: level of logging, one of [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     """
+    _auth = None
+    _cert = None
+    _verify = False
 
-    _log = None
-
-    def __init__(self, scheme: str, host: str, port: int, log_name: str = None, verbosity: int = None):
-        self._set_logger(log_name=log_name, verbosity=verbosity)
-
-        self._log.debug('__SET BASE URL')
+    def __init__(self, scheme: str, host: str, port: int):
+        _logger.debug('__SET BASE URL')
         self._scheme = scheme
         self._host = host
         self._port = port
 
-        self._log.debug('__SET SERVICES')
+        _logger.debug('__SET SERVICES')
         self.app = services.AppService(self)
         self.stream = services.StreamService(self)
         self.user = services.UserService(self)
-
-    def _set_logger(self, log_name: str = None, verbosity: int = None):
-        """
-        Sets up logger for the controller
-
-        Args:
-            log_name: name of the log
-            verbosity: level of logging, one of [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
-        """
-        if not log_name:
-            log_name = 'qlik_sense_api_client'
-        if not verbosity:
-            verbosity = logging.CRITICAL
-        self._log = logging.getLogger(name=log_name)
-        self._log.setLevel(verbosity)
-        self._log.addHandler(logging.StreamHandler(sys.stdout))
 
     def _get_headers(self, xrf_key: str) -> dict:
         """
@@ -65,7 +51,7 @@ class Client(abc.ABC):
         Args:
             xrf_key: the csrf key
 
-        Returns: the headers as a dictionary
+        Returns: the headers for the request as a dictionary
 
         """
         headers = {
@@ -104,13 +90,59 @@ class Client(abc.ABC):
 
     @staticmethod
     def _get_data(data: 'Optional[Union[str, list, dict]]' = None) -> 'Optional[str]':
+        """
+        Formats the data to be inserted into a request body
+
+        Args:
+            data: data to be inserted into the request body
+
+        Returns: the data as a string, in json format if it was originally a dictionary or a list
+        """
         if not data:
             return None
         if isinstance(data, list) or isinstance(data, dict):
             data = json.dumps(data)
         return data
 
-    @abc.abstractmethod
+    def _get_prepared_request(self, method: str, url: str, params: dict, data: str) -> 'requests.PreparedRequest':
+        """
+        Builds a prepared request
+
+        Args:
+            method: REST method, one of ['GET', 'POST', 'PUT', 'DELETE']
+            url: the relative endpoint for the request (e.g. /qrs/app/)
+            params: the query string parameters for the request
+            data: data to be inserted in the body of the request
+
+        Returns: the prepared request, ready to send
+        """
+        _logger.debug(f'__PREPARE REQUEST {method} <{url}> params={params} data={len(data) if data else None}')
+        xrf_key = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(16))
+        request = requests.Request(method=method,
+                                   url=self._get_url(url=url),
+                                   headers=self._get_headers(xrf_key=xrf_key),
+                                   data=self._get_data(data),
+                                   params=self._get_params(xrf_key=xrf_key, params=params),
+                                   auth=self._auth)
+        return request.prepare()
+
+    def _send_request(self, request: 'requests.PreparedRequest') -> 'requests.Response':
+        """
+        Executes the call
+
+        Args:
+            request: request to be made
+
+        Returns: the response
+        """
+        _logger.debug(f'__SEND REQUEST {request.method} <{request.url}>'
+                      f' headers={request.headers} body_size={len(request.body())}')
+        session = requests.Session()
+        return session.send(request=request,
+                            cert=self._cert,
+                            verify=self._verify,
+                            allow_redirects=True)
+
     def call(self, method: str, url: str, params: 'Optional[dict]' = None,
              data: 'Optional[Union[str, list, dict]]' = None) -> 'requests.Response':
         """
@@ -124,4 +156,8 @@ class Client(abc.ABC):
 
         Returns: a Response object
         """
-        raise NotImplementedError
+        _logger.info(f'API CALL {method} <{url}> params={params} data={len(data) if data else None}')
+        prepared_request = self._get_prepared_request(method=method, url=url, params=params, data=data)
+        response = self._send_request(prepared_request)
+        _logger.debug(f'__RESPONSE RECEIVED {response.text} headers={response.headers}')
+        return response

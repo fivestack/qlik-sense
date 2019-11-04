@@ -86,7 +86,8 @@ class Client(abc.ABC):
         """
         return Url(scheme=self._scheme, host=self._host, port=self._port, path=url)
 
-    def _get_params(self, xrf_key: str, params: dict = None) -> dict:
+    @staticmethod
+    def _get_params(xrf_key: str, params: dict = None) -> dict:
         """
         Builds the query string parameters for the request
 
@@ -101,7 +102,8 @@ class Client(abc.ABC):
         params.update({'Xrfkey': xrf_key})
         return params
 
-    def _get_data(self, data: 'Optional[Union[str, list, dict]]' = None) -> 'Optional[str]':
+    @staticmethod
+    def _get_data(data: 'Optional[Union[str, list, dict]]' = None) -> 'Optional[str]':
         if not data:
             return None
         if isinstance(data, list) or isinstance(data, dict):

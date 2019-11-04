@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 from dataclasses import asdict
 
 from qlik_sense.models.stream import StreamCondensedSchema, StreamSchema
-from qlik_sense.services import util
+from qlik_sense.services import util, base
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     import requests
 
 
-class StreamService:
+class StreamService(base.BaseService):
     """
     StreamService wraps each one of the stream-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -62,36 +62,10 @@ class StreamService:
         """
         if full_attribution:
             schema = StreamSchema()
-            url = f'{self.url}/full'
         else:
             schema = StreamCondensedSchema()
-            url = f'{self.url}'
-        params = {
-            'filter': filter_by,
-            'orderby': order_by,
-            'privileges': privileges
-        }
-        request = util.QSAPIRequest(method='GET', url=url, params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
-        return None
-
-    def query_count(self, filter_by: str = None) -> 'Optional[int]':
-        """
-        This method queries Qlik Sense streams based on the provided criteria and returns the count
-
-        Args:
-            filter_by: a filter string in jquery format
-
-        Returns: the number of Qlik Sense Streams that meet the query_string criteria (or None)
-        """
-        params = {'filter': filter_by}
-        request = util.QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return int(response.text())
-        return None
+        return self._query(schema=schema, filter_by=filter_by, order_by=order_by, privileges=privileges,
+                           full_attribution=full_attribution)
 
     def get_by_name(self, name: str) -> 'Optional[List[StreamCondensed]]':
         """
@@ -115,16 +89,7 @@ class StreamService:
 
         Returns: a Qlik Sense Stream with full attribution
         """
-        schema = StreamSchema()
-        request = util.QSAPIRequest(
-            method='GET',
-            url=f'{self.url}/{id}',
-            params={'privileges': privileges}
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._get(schema=StreamSchema(), id=id, privileges=privileges)
 
     def create(self, stream: 'Stream', privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':
         """
@@ -134,17 +99,7 @@ class StreamService:
             stream: the new stream
             privileges:
         """
-        schema = StreamSchema()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}',
-            params={'privileges': privileges},
-            data=asdict(stream)
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._create(schema=StreamSchema(), entity=stream, privileges=privileges)
 
     def create_many(self, streams: 'List[Stream]', privileges: 'Optional[List[str]]' = None) -> 'Optional[List[Stream]]':
         """
@@ -154,17 +109,7 @@ class StreamService:
             streams: a list of new streams
             privileges:
         """
-        schema = StreamSchema()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}/many',
-            params={'privileges': privileges},
-            data=[asdict(stream) for stream in streams]
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
-        return None
+        return self._create_many(schema=StreamSchema(), entities=streams, privileges=privileges)
 
     def update(self, stream: 'Stream', privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':
         """
@@ -174,17 +119,7 @@ class StreamService:
             stream: stream to update
             privileges:
         """
-        schema = StreamSchema()
-        request = util.QSAPIRequest(
-            method='PUT',
-            url=f'{self.url}/{stream.id}',
-            params={'privileges': privileges},
-            data=asdict(stream)
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._update(schema=StreamSchema(), entity=stream, privileges=privileges)
 
     def delete(self, stream: 'StreamCondensed'):
         """
@@ -193,8 +128,4 @@ class StreamService:
         Args:
             stream: stream to delete
         """
-        request = util.QSAPIRequest(
-            method='DELETE',
-            url=f'{self.url}/{stream.id}'
-        )
-        self._call(request)
+        self._delete(entity=stream)

@@ -8,7 +8,7 @@ from dataclasses import asdict
 import uuid
 
 from qlik_sense.models.app import AppCondensedSchema, AppSchema, AppExportSchema
-from qlik_sense.services import util
+from qlik_sense.services import util, base
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import requests
 
 
-class AppService:
+class AppService(base.BaseService):
     """
     AppService wraps each one of the app-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -83,36 +83,10 @@ class AppService:
         """
         if full_attribution:
             schema = AppSchema()
-            url = f'{self.url}/full'
         else:
             schema = AppCondensedSchema()
-            url = f'{self.url}'
-        params = {
-            'filter': filter_by,
-            'orderby': order_by,
-            'privileges': privileges
-        }
-        request = util.QSAPIRequest(method='GET', url=url, params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
-
-    def query_count(self, filter_by: str = None) -> 'Optional[int]':
-        """
-        This method queries Qlik Sense apps based on the provided criteria and returns the count
-
-        Args:
-            filter_by: a filter string in jquery format
-
-        Returns: the number of Qlik Sense Apps that meet the query_string criteria (or None)
-        """
-        params = {'filter': filter_by}
-        request = util.QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return int(response.text())
-        return None
+        return self._query(schema=schema, filter_by=filter_by, order_by=order_by, privileges=privileges,
+                           full_attribution=full_attribution)
 
     def get_by_name_and_stream(self, app_name: str, stream_name: str) -> 'Optional[List[AppCondensed]]':
         """
@@ -137,16 +111,7 @@ class AppService:
 
         Returns: a Qlik Sense app
         """
-        schema = AppSchema()
-        request = util.QSAPIRequest(
-            method='GET',
-            url=f'{self.url}/{id}',
-            params={'privileges': privileges}
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._get(schema=AppSchema(), id=id, privileges=privileges)
 
     def update(self, app: 'App', privileges: 'Optional[List[str]]' = None) -> 'Optional[App]':
         """
@@ -158,17 +123,7 @@ class AppService:
 
         Returns: a Qlik Sense app object for the updated app
         """
-        schema = AppSchema()
-        request = util.QSAPIRequest(
-            method='PUT',
-            url=f'{self.url}/{app.id}',
-            params={'privileges': privileges},
-            data=asdict(app)
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._update(schema=AppSchema(), entity=app, privileges=privileges)
 
     def delete(self, app: 'AppCondensed'):
         """
@@ -177,11 +132,7 @@ class AppService:
         Args:
             app: app to delete
         """
-        request = util.QSAPIRequest(
-            method='DELETE',
-            url=f'{self.url}/{app.id}'
-        )
-        self._call(request)
+        self._delete(entity=app)
 
     def reload(self, app: 'AppCondensed'):
         """

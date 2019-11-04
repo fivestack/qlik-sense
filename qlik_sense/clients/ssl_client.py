@@ -33,6 +33,7 @@ class SSLClient(base.Client):
                  certificate: str = None, verify: bool = False,
                  log_name: str = None, verbosity: int = None):
         super().__init__(scheme=scheme, host=host, port=port, log_name=log_name, verbosity=verbosity)
+
         self._log.debug('__SET AUTH')
         self._set_ssl_auth(certificate=certificate, verify=verify)
 
@@ -44,8 +45,8 @@ class SSLClient(base.Client):
             certificate: path to .pem client certificate
             verify: false to trust in self-signed certificates
         """
-        (base, ext) = os.path.splitext(certificate)
-        self._cert = f'{base}{ext}', f'{base}_key{ext}'
+        path, ext = os.path.splitext(certificate)
+        self._cert = f'{path}{ext}', f'{path}_key{ext}'
         self._verify = verify
         if not verify:
             urllib3.disable_warnings()

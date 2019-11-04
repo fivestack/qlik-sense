@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from dataclasses import asdict
 
 from qlik_sense.models.user import UserCondensedSchema, UserSchema
-from qlik_sense.services import util
+from qlik_sense.services import util, base
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     import requests
 
 
-class UserService:
+class UserService(base.BaseService):
     """
     UserService wraps each one of the user-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -42,7 +42,7 @@ class UserService:
 
     def __init__(self, client: 'Client'):
         self.client = client
-        self.url = '/qrs/stream'
+        self.url = '/qrs/user'
 
     def _call(self, request: 'util.QSAPIRequest') -> 'requests.Response':
         return self.client.call(**asdict(request))
@@ -64,48 +64,24 @@ class UserService:
         """
         if full_attribution:
             schema = UserSchema()
-            url = f'{self.url}/full'
         else:
             schema = UserCondensedSchema()
-            url = f'{self.url}'
-        params = {
-            'filter': filter_by,
-            'orderby': order_by,
-            'privileges': privileges
-        }
-        request = util.QSAPIRequest(method='GET', url=url, params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
-        return None
+        return self._query(schema=schema, filter_by=filter_by, order_by=order_by, privileges=privileges,
+                           full_attribution=full_attribution)
 
-    def query_count(self, filter_by: str = None) -> 'Optional[int]':
-        """
-        This method queries Qlik Sense users based on the provided criteria and returns the count
-
-        Args:
-            filter_by: a filter string in jquery format
-
-        Returns: the number of Qlik Sense Users that meet the query_string criteria (or None)
-        """
-        params = {'filter': filter_by}
-        request = util.QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return int(response.text())
-        return None
-
-    def get_by_name(self, name: str) -> 'Optional[List[UserCondensed]]':
+    def get_by_name(self, name: str, full_attribution: bool = False) -> 'Optional[List[UserCondensed]]':
         """
         This method is such a common use case of the query() method that it gets its own method
 
         Args:
             name: name of the user
+            full_attribution: allows the response to contain the full user attribution,
+            defaults to False (limited attribution)
 
         Returns: the Qlik Sense condensed User(s) that fit the criteria
         """
         filter_by = f"name eq '{name}'"
-        return self.query(filter_by=filter_by)
+        return self.query(filter_by=filter_by, full_attribution=full_attribution)
 
     def get(self, id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[User]':
         """
@@ -117,16 +93,7 @@ class UserService:
 
         Returns: a Qlik Sense User with full attribution
         """
-        schema = UserSchema()
-        request = util.QSAPIRequest(
-            method='GET',
-            url=f'{self.url}/{id}',
-            params={'privileges': privileges}
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._get(schema=UserSchema(), id=id, privileges=privileges)
 
     def create(self, user: 'User', privileges: 'Optional[List[str]]' = None) -> 'Optional[User]':
         """
@@ -136,17 +103,7 @@ class UserService:
             user: the new user
             privileges:
         """
-        schema = UserSchema()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}',
-            params={'privileges': privileges},
-            data=asdict(user)
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._create(schema=UserSchema(), entity=user, privileges=privileges)
 
     def create_many(self, users: 'List[User]', privileges: 'Optional[List[str]]' = None) -> 'Optional[List[User]]':
         """
@@ -156,17 +113,7 @@ class UserService:
             users: a list of new users
             privileges:
         """
-        schema = UserSchema()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}/many',
-            params={'privileges': privileges},
-            data=[asdict(user) for user in users]
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
-        return None
+        return self._create_many(schema=UserSchema(), entities=users, privileges=privileges)
 
     def update(self, user: 'User', privileges: 'Optional[List[str]]' = None) -> 'Optional[User]':
         """
@@ -176,17 +123,7 @@ class UserService:
             user: user to update
             privileges:
         """
-        schema = UserSchema()
-        request = util.QSAPIRequest(
-            method='PUT',
-            url=f'{self.url}/{user.id}',
-            params={'privileges': privileges},
-            data=asdict(user)
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
-        return None
+        return self._update(schema=UserSchema(), entity=user, privileges=privileges)
 
     def delete(self, user: 'UserCondensed'):
         """
@@ -195,8 +132,4 @@ class UserService:
         Args:
             user: user to delete
         """
-        request = util.QSAPIRequest(
-            method='DELETE',
-            url=f'{self.url}/{user.id}'
-        )
-        self._call(request)
+        self._delete(entity=user)

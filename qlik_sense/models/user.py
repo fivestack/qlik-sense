@@ -1,49 +1,64 @@
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import List
 
 import marshmallow as ma
 
+from .base import EntityCondensedSchema, EntityCondensed, EntitySchema, Entity, AuditingSchema, Auditing
 from .tag import TagCondensedSchema, TagCondensed
 from .custom_property import CustomPropertyValueSchema, CustomPropertyValue
 
 
 @dataclass(unsafe_hash=True)
-class UserCondensed:
+class UserCondensed(EntityCondensed):
     """
     Represents a Qlik Sense User with limited attribution
     """
-    id: str = field(default=None, hash=True)
-    privileges: List[str] = field(default_factory=list, hash=False)
     user_id: str = field(default=None, hash=True)
     user_directory: str = field(default=None, hash=True)
-    name: str = field(default=None, hash=False)
+
+
+class UserCondensedSchema(EntityCondensedSchema):
+    """
+    A marshmallow schema corresponding to a Qlik Sense User object with limited attribution
+    """
+    user_id: str = ma.fields.Str(required=True, data_key='userId')
+    user_directory: str = ma.fields.Str(required=True, data_key='userDirectory')
+
+    @ma.post_load()
+    def post_load(self, data: dict, **kwargs) -> 'UserCondensed':
+        return UserCondensed(**data)
 
 
 @dataclass(unsafe_hash=True)
-class UserAttribute:
+class UserAttribute(Auditing):
     """
     Represents a Qlik Sense User Attribute
     """
     id: str = field(default=None, hash=True)
-    created_date: datetime = field(default=None, hash=False)
-    modified_date: datetime = field(default=None, hash=False)
-    modified_user: str = field(default=None, hash=False)
-    schema_path: str = field(default=None, hash=False)
     attribute_type: str = field(default=None, hash=True)
     attribute_value: str = field(default=None, hash=False)
     external_id: str = field(default=None, hash=False)
 
 
+class UserAttributeSchema(AuditingSchema):
+    """
+    A marshmallow schema corresponding to a Qlik Sense User Attribute object
+    """
+    id = ma.fields.UUID(required=False)
+    attribute_type = ma.fields.Str(required=True, data_key='attributeType')
+    attribute_value = ma.fields.Str(required=False, data_key='attributeValue')
+    external_id = ma.fields.Str(required=False, data_key='externalId')
+
+    @ma.post_load()
+    def post_load(self, data: dict, **kwargs) -> 'UserAttribute':
+        return UserAttribute(**data)
+
+
 @dataclass(unsafe_hash=True)
-class User(UserCondensed):
+class User(UserCondensed, Entity):
     """
     Represents a Qlik Sense User with full attribution
     """
-    created_date: datetime = field(default=None, hash=False)
-    modified_date: datetime = field(default=None, hash=False)
-    modified_user: str = field(default=None, hash=False)
-    schema_path: str = field(default=None, hash=False)
     custom_properties: List[CustomPropertyValue] = field(default_factory=list, hash=False)
     roles: List[str] = field(default_factory=list, hash=False)
     attributes: List[UserAttribute] = field(default_factory=list, hash=False)
@@ -54,47 +69,10 @@ class User(UserCondensed):
     tags: List[TagCondensed] = field(default_factory=list, hash=False)
 
 
-class UserCondensedSchema(ma.Schema):
-    """
-    A marshmallow schema corresponding to a Qlik Sense User object with limited attribution
-    """
-    id = ma.fields.UUID(required=False)
-    privileges = ma.fields.List(cls_or_instance=str, required=False)
-    user_id: str = ma.fields.Str(required=True, data_key='userId')
-    user_directory: str = ma.fields.Str(required=True, data_key='userDirectory')
-    name: str = ma.fields.Str(required=False)
-
-    @ma.post_load()
-    def post_load(self, data: dict, **kwargs) -> 'UserCondensed':
-        return UserCondensed(**data)
-
-
-class UserAttributeSchema(ma.Schema):
-    """
-    A marshmallow schema corresponding to a Qlik Sense User Attribute object
-    """
-    id = ma.fields.UUID(required=False)
-    created_date = ma.fields.DateTime(required=False, data_key='createdDate')
-    modified_date = ma.fields.DateTime(required=False, data_key='modifiedDate')
-    modified_user = ma.fields.Str(required=False, data_key='modifiedByUserName')
-    schema_path = ma.fields.Str(required=False, data_key='schemaPath')
-    attribute_type = ma.fields.Str(required=True, data_key='attributeType')
-    attribute_value = ma.fields.Str(required=False, data_key='attributeValue')
-    external_id = ma.fields.Str(required=False, data_key='externalId')
-
-    @ma.post_load()
-    def post_load(self, data: dict, **kwargs) -> 'UserAttribute':
-        return UserAttribute(**data)
-
-
-class UserSchema(UserCondensedSchema):
+class UserSchema(UserCondensedSchema, EntitySchema):
     """
     A marshmallow schema corresponding to a Qlik Sense User object with full attribution
     """
-    created_date = ma.fields.DateTime(required=False, data_key='createdDate')
-    modified_date = ma.fields.DateTime(required=False, data_key='modifiedDate')
-    modified_user = ma.fields.Str(required=False, data_key='modifiedByUserName')
-    schema_path = ma.fields.Str(required=False, data_key='schemaPath')
     custom_properties = ma.fields.Nested(nested=CustomPropertyValueSchema, many=True, required=False,
                                          data_key='customProperties')
     roles = ma.fields.List(cls_or_instance=str, required=False)

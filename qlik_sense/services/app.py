@@ -33,7 +33,7 @@ class AppService:
         - qrs/app/full: GET
         - qrs/app/{app.id}: GET, PUT, DELETE
         - qrs/app/{app.id}/copy: POST
-        - qrs/app/{app.id}/export/{token}: POST
+        - qrs/app/{app.id}/export/{token}: POST, DELETE
         - qrs/app/{app.id}/reload: POST
         - qrs/app/{app.id}/publish: PUT
         - qrs/app/{app.id}/replace: PUT
@@ -49,7 +49,6 @@ class AppService:
         - qrs/app/table: POST
         - qrs/app/upload: POST
         - qrs/app/upload/replace: POST
-        - qrs/app/{app.id}/export/{token}: DELETE
         - qrs/app/{app.id}/export: GET
         - qrs/app/{app.id}/hubinfo: GET
         - qrs/app/{app.id}/migrate: PUT
@@ -57,41 +56,6 @@ class AppService:
         - qrs/app/{app.id}/privileges: GET
         - qrs/app/{app.id}/replace/target: PUT
         - qrs/app/{app.id}/state: GET
-
-        - qrs/app/content: GET
-        - qrs/app/content/count: GET
-        - qrs/app/content/full: GET
-        - qrs/app/content/table: POST
-        - qrs/app/content/{app.id}: GET
-        - qrs/app/content/{app.id}/fileextensionwhitelist: GET
-
-        - qrs/app/datasegment: GET
-        - qrs/app/datasegment/count: GET
-        - qrs/app/datasegment/full: GET
-        - qrs/app/datasegment/previewprivileges: POST
-        - qrs/app/datasegment/table: POST
-        - qrs/app/datasegment/{app.id}: GET
-
-        - qrs/app/hublist: GET
-        - qrs/app/hublist/full: GET
-
-        - qrs/app/internal: GET
-        - qrs/app/internal/count: GET
-        - qrs/app/internal/full: GET
-        - qrs/app/internal/previewprivileges: POST
-        - qrs/app/internal/table: POST
-        - qrs/app/internal/{app.id}: GET
-
-        - qrs/app/object: GET
-        - qrs/app/object/count: GET
-        - qrs/app/object/full: GET
-        - qrs/app/object/previewprivileges: POST
-        - qrs/app/object/table: POST
-        - qrs/app/object/{app.id}: GET, PUT, DELETE
-        - qrs/app/object/{app.id}/approve: POST
-        - qrs/app/object/{app.id}/publish: PUT
-        - qrs/app/object/{app.id}/unapprove: POST
-        - qrs/app/object/{app.id}/unpublish: PUT
     """
     requests = list()
 

@@ -170,7 +170,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def create_export(self, app: 'AppCondensed', keep_data: bool = False) -> 'Optional[AppExport]':
@@ -193,7 +193,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def unpublish(self, app: 'AppCondensed') -> 'Optional[App]':
@@ -212,7 +212,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def delete_export(self, app_export: 'AppExport') -> 'Optional[AppExport]':
@@ -229,7 +229,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def publish(self, app: 'AppCondensed', stream: 'StreamCondensed', name: str = None) -> 'Optional[App]':
@@ -255,7 +255,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def replace(self, app: 'AppCondensed', app_to_replace: 'AppCondensed') -> 'Optional[App]':
@@ -276,7 +276,7 @@ class AppService(base.BaseService):
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def download_file(self, app_export: 'AppExport') -> 'Optional[Iterable]':

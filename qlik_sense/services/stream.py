@@ -67,17 +67,19 @@ class StreamService(base.BaseService):
         return self._query(schema=schema, filter_by=filter_by, order_by=order_by, privileges=privileges,
                            full_attribution=full_attribution)
 
-    def get_by_name(self, name: str) -> 'Optional[List[StreamCondensed]]':
+    def get_by_name(self, name: str, full_attribution: bool = False) -> 'Optional[List[StreamCondensed]]':
         """
         This method is such a common use case of the query() method that it gets its own method
 
         Args:
             name: name of the stream
+            full_attribution: allows the response to contain the full user attribution,
+            defaults to False (limited attribution)
 
         Returns: the Qlik Sense condensed Stream(s) that fit the criteria
         """
         filter_by = f"name eq '{name}'"
-        return self.query(filter_by=filter_by)
+        return self.query(filter_by=filter_by, full_attribution=full_attribution)
 
     def get(self, id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':
         """
@@ -91,6 +93,29 @@ class StreamService(base.BaseService):
         """
         return self._get(schema=StreamSchema(), id=id, privileges=privileges)
 
+    def get_template(self, list_entries: bool = False) -> 'Optional[Stream]':
+        """
+        Gets a user, initialized with default values.
+        Optionally, select if the objects that are referenced by the user are to be initialized
+        by default or set to null.
+
+        Args:
+            list_entries: if true, turns this into a recursive call, returns default objects for all nested objects
+
+        Returns: a default user
+        """
+        return self._get_template(schema=StreamSchema(), entity_type='stream', list_entries=list_entries)
+
+    def get_new_id(self) -> str:
+        """
+        Gets a new stream id, so that a new stream can be generated. This happens automatically in create() if the
+        supplied new stream does not have an id, but is exposed here for convenience.
+
+        Returns: a new stream id as a uuid
+        """
+        stream = self.get_template(list_entries=False)
+        return stream.id
+
     def create(self, stream: 'Stream', privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':
         """
         This method creates a new stream on the server with the provided attribution
@@ -99,6 +124,8 @@ class StreamService(base.BaseService):
             stream: the new stream
             privileges:
         """
+        if stream.id is None:
+            stream.id = self.get_new_id()
         return self._create(schema=StreamSchema(), entity=stream, privileges=privileges)
 
     def create_many(self, streams: 'List[Stream]', privileges: 'Optional[List[str]]' = None) -> 'Optional[List[Stream]]':
@@ -109,6 +136,9 @@ class StreamService(base.BaseService):
             streams: a list of new streams
             privileges:
         """
+        for stream in streams:
+            if stream.id is None:
+                stream.id = self.get_new_id()
         return self._create_many(schema=StreamSchema(), entities=streams, privileges=privileges)
 
     def update(self, stream: 'Stream', privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':

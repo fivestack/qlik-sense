@@ -1,8 +1,8 @@
 """
 These are the models and schemas for the Qlik Sense App domain
 """
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass, field, asdict
+from typing import List, Union
 from datetime import datetime
 
 import marshmallow as ma
@@ -25,7 +25,7 @@ class AppCondensed(EntityCondensed):
     stream: StreamCondensed = field(default=None, hash=False)
     saved_in_product_version: str = field(default=None, hash=False)
     migration_hash: str = field(default=None, hash=False)
-    availability_status: str = field(default=None, hash=False)
+    availability_status: int = field(default=None, hash=False)
 
 
 class AppCondensedSchema(EntityCondensedSchema):
@@ -38,7 +38,13 @@ class AppCondensedSchema(EntityCondensedSchema):
     stream = ma.fields.Nested(StreamCondensedSchema, many=False, required=False)
     saved_in_product_version = ma.fields.Str(required=False, data_key='savedInProductVersion')
     migration_hash = ma.fields.Str(required=False, data_key='migrationHash')
-    availability_status = ma.fields.Str(required=False, data_key='availabilityStatus')
+    availability_status = ma.fields.Int(required=False, data_key='availabilityStatus')
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[AppCondensed, dict]', **kwargs) -> dict:
+        if isinstance(data, AppCondensed):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'AppCondensed':
@@ -78,6 +84,12 @@ class AppSchema(AppCondensedSchema, EntitySchema):
     thumbnail = ma.fields.Str(required=False)
     dynamic_color = ma.fields.Str(required=False)
 
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[App, dict]', **kwargs) -> dict:
+        if isinstance(data, App):
+            return asdict(data)
+        return data
+
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'App':
         return App(**data)
@@ -104,6 +116,12 @@ class AppExportSchema(ma.Schema):
     app_id = ma.fields.UUID(required=True, data_key='appId')
     download_path = ma.fields.Str(required=False, data_key='downloadPath')
     is_cancelled = ma.fields.Bool(required=True, data_key='cancelled')
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[AppExport, dict]', **kwargs) -> dict:
+        if isinstance(data, AppExport):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'AppExport':

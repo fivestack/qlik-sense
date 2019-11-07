@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from typing import List
 
@@ -41,8 +41,8 @@ class EntityCondensedSchema(ma.Schema):
     A marshmallow schema corresponding to a Qlik Sense Stream object with limited attribution
     """
     id = ma.fields.UUID(required=False)
-    privileges = ma.fields.List(cls_or_instance=ma.fields.Str, required=False)
-    name = ma.fields.Str(required=True)
+    privileges = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, allow_none=True)
+    name = ma.fields.Str(required=True, allow_none=True)
 
 
 @dataclass(unsafe_hash=True)

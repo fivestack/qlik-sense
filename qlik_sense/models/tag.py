@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
+from typing import Union
 
 import marshmallow as ma
 
@@ -17,6 +18,12 @@ class TagCondensedSchema(EntityCondensedSchema):
     """
     A marshmallow schema corresponding to a Qlik Sense Tag object with limited attribution
     """
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[TagCondensed, dict]', **kwargs) -> dict:
+        if isinstance(data, TagCondensed):
+            return asdict(data)
+        return data
+
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'TagCondensed':
         return TagCondensed(**data)
@@ -33,6 +40,12 @@ class TagSchema(TagCondensedSchema, EntitySchema):
     """
     A marshmallow schema corresponding to a Qlik Sense Tag object with full attribution
     """
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[Tag, dict]', **kwargs) -> dict:
+        if isinstance(data, Tag):
+            return asdict(data)
+        return data
+
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'Tag':
         return Tag(**data)

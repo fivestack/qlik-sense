@@ -1,8 +1,12 @@
 """
 This module provides a mixin with the base mechanics for interacting with Qlik Sense entities.
 """
+import logging
+import sys
 from typing import TYPE_CHECKING, List, Optional, Union
 from dataclasses import asdict
+import abc
+from datetime import datetime
 
 from qlik_sense.models.base import EntityCondensedSchema, EntitySchema
 from qlik_sense.services import util
@@ -11,8 +15,12 @@ if TYPE_CHECKING:
     from qlik_sense.models.base import EntityCondensed, Entity
     import requests
 
+_logger = logging.getLogger(__name__)
+_logger.addHandler(logging.StreamHandler(sys.stdout))
+_logger.setLevel(logging.DEBUG)
 
-class BaseService:
+
+class BaseService(abc.ABC):
     """
     BaseService wraps each one of the generic entity QlikSense endpoints in a method. This buffers the application
     from API updates and makes standing up/maintaining new entities easier and more consistent.
@@ -62,7 +70,7 @@ class BaseService:
         request = util.QSAPIRequest(method='GET', url=url, params=params)
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
+            return schema.loads(response.content, many=True)
         return None
 
     def query_count(self, filter_by: str = None) -> 'Optional[int]':
@@ -78,7 +86,7 @@ class BaseService:
         request = util.QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return int(response.text())
+            return int(response.json()['value'])
         return None
 
     def _get(self, schema: 'EntitySchema', id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[Entity]':
@@ -99,7 +107,30 @@ class BaseService:
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
+        return None
+
+    def _get_template(self, schema: 'EntitySchema', entity_type: str, list_entries: bool = False) -> 'Optional[Entity]':
+        """
+        Gets an entity, initialized with default values, of a specific entity_type.
+        Optionally, select if the objects that are referenced by the entities are to be initialized
+        by default or set to null.
+
+        Args:
+            schema: schema to use to turn the json object into a python object, should correspond to entity_type
+            entity_type: type of entity to return (e.g. user, stream, app, etc.)
+            list_entries: if true, turns this into a recursive call, returns default objects for all nested objects
+
+        Returns: a default entity
+        """
+        request = util.QSAPIRequest(
+            method='GET',
+            url=f'/qrs/about/api/default/{entity_type}',
+            params={'listentries': list_entries}
+        )
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return schema.loads(response.content)
         return None
 
     def _create(self, schema: 'EntitySchema', entity: 'Entity',
@@ -112,15 +143,18 @@ class BaseService:
             entity: the new entity
             privileges:
         """
+        entity.created_date = datetime.now()
+        entity.modified_date = datetime.now()
+        _logger.debug(f'__CREATE {entity}')
         request = util.QSAPIRequest(
             method='POST',
             url=f'{self.url}',
             params={'privileges': privileges},
-            data=asdict(entity)
+            data=schema.dumps(entity)
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def _create_many(self, schema: 'EntitySchema', entities: 'List[Entity]',
@@ -133,15 +167,18 @@ class BaseService:
             entities: a list of new entities
             privileges:
         """
+        for entity in entities:
+            entity.created_date = datetime.now()
+            entity.modified_date = datetime.now()
         request = util.QSAPIRequest(
             method='POST',
             url=f'{self.url}/many',
             params={'privileges': privileges},
-            data=[asdict(entity) for entity in entities]
+            data=schema.dumps(entities, many=True)
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json(), many=True)
+            return schema.loads(response.content, many=True)
         return None
 
     def _update(self, schema: 'EntitySchema', entity: 'Entity',
@@ -158,11 +195,11 @@ class BaseService:
             method='PUT',
             url=f'{self.url}/{entity.id}',
             params={'privileges': privileges},
-            data=asdict(entity)
+            data=schema.dumps(entity)
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
-            return schema.loads(response.json())
+            return schema.loads(response.content)
         return None
 
     def _delete(self, entity: 'EntityCondensed'):

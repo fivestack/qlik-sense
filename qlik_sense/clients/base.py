@@ -18,6 +18,7 @@ from qlik_sense import services
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.StreamHandler(sys.stdout))
+_logger.setLevel(logging.DEBUG)
 
 
 class Client(abc.ABC):
@@ -124,7 +125,14 @@ class Client(abc.ABC):
                                    data=self._get_data(data),
                                    params=self._get_params(xrf_key=xrf_key, params=params),
                                    auth=self._auth)
-        return request.prepare()
+        _logger.debug(f'__REQUEST BUILT {request.method} <{request.url}> '
+                      f'params={request.params} '
+                      f'data={len(request.data) if request.data else None}')
+        prepared_request = request.prepare()
+        _logger.debug(f'__REQUEST PREPARED {prepared_request.method} <{prepared_request.url}> '
+                      f'headers={prepared_request.headers} '
+                      f'body={len(prepared_request.body) if prepared_request.body else None}')
+        return prepared_request
 
     def _send_request(self, request: 'requests.PreparedRequest', session: 'requests.Session') -> 'requests.Response':
         """
@@ -135,12 +143,16 @@ class Client(abc.ABC):
 
         Returns: the response
         """
-        _logger.debug(f'__SEND REQUEST {request.method} <{request.url}>'
-                      f' headers={request.headers} body_size={len(request.body())}')
-        return session.send(request=request,
-                            cert=self._cert,
-                            verify=self._verify,
-                            allow_redirects=False)
+        _logger.debug(f'__SEND REQUEST {request.method} <{request.url}> headers={request.headers} '
+                      f'body={len(request.body) if request.body else None}')
+        response = session.send(request=request,
+                                cert=self._cert,
+                                verify=self._verify,
+                                allow_redirects=False)
+        _logger.debug(f'__RESPONSE RECEIVED {response.status_code} {response.reason} headers={response.headers} '
+                      f'content_size={len(response.content) if response.content else None} '
+                      f'is_redirect={response.is_redirect}')
+        return response
 
     def _handle_redirect(self, response: 'requests.Response', headers: dict,
                          session: 'requests.Session') -> 'requests.Response':

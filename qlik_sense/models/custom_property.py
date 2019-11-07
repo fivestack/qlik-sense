@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass, field, asdict
+from typing import List, Union
 
 import marshmallow as ma
 
@@ -20,7 +20,14 @@ class CustomPropertyDefinitionCondensedSchema(EntityCondensedSchema):
     A marshmallow schema corresponding to a Qlik Sense Custom Property Definition object with limited attribution
     """
     value_type = ma.fields.Str(required=True, data_key='valueType')
-    value_choices = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, data_key='choiceValues')
+    value_choices = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, allow_none=True,
+                                   data_key='choiceValues')
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[CustomPropertyDefinitionCondensed, dict]', **kwargs) -> dict:
+        if isinstance(data, CustomPropertyDefinitionCondensed):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'CustomPropertyDefinitionCondensed':
@@ -40,8 +47,15 @@ class CustomPropertyDefinitionSchema(CustomPropertyDefinitionCondensedSchema, En
     """
     A marshmallow schema corresponding to a Qlik Sense Custom Property Definition object with full attribution
     """
-    object_types = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, data_key='objectTypes')
+    object_types = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, allow_none=True,
+                                  data_key='objectTypes')
     description = ma.fields.Str(required=False)
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[CustomPropertyDefinition, dict]', **kwargs) -> dict:
+        if isinstance(data, CustomPropertyDefinition):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'CustomPropertyDefinition':
@@ -64,8 +78,14 @@ class CustomPropertyValueSchema(AuditingSchema):
     """
     id = ma.fields.UUID(required=False)
     value = ma.fields.Str(required=True)
-    definition = ma.fields.Nested(nested=CustomPropertyDefinitionCondensedSchema, many=False, required=True)
+    definition = ma.fields.Nested(CustomPropertyDefinitionCondensedSchema, many=False, required=True)
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[CustomPropertyValue, dict]', **kwargs) -> dict:
+        if isinstance(data, CustomPropertyValue):
+            return asdict(data)
+        return data
 
     @ma.post_load()
-    def post_load(self, data: dict, **kwargs) -> 'CustomPropertyDefinition':
-        return CustomPropertyDefinition(**data)
+    def post_load(self, data: dict, **kwargs) -> 'CustomPropertyValue':
+        return CustomPropertyValue(**data)

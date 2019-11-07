@@ -43,8 +43,10 @@ class SSLClient(base.Client):
             urllib3.disable_warnings()
 
         _logger.debug(f'__SET USER directory={directory} user={user}')
-        if directory and user:
-            self._qlik_user = f'UserDirectory={directory};UserId={user}'
+        if not directory and not user:
+            directory = 'internal'
+            user = 'sa_repository'
+        self._qlik_user = f'UserDirectory={directory};UserId={user}'
 
     def _get_headers(self, xrf_key: str) -> dict:
         """

@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass, field, asdict
+from typing import List, Union
 
 import marshmallow as ma
 
@@ -21,6 +21,12 @@ class StreamCondensedSchema(EntityCondensedSchema):
     """
     A marshmallow schema corresponding to a Qlik Sense Stream object with limited attribution
     """
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[StreamCondensed, dict]', **kwargs) -> dict:
+        if isinstance(data, StreamCondensed):
+            return asdict(data)
+        return data
+
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'StreamCondensed':
         return StreamCondensed(**data)
@@ -32,7 +38,7 @@ class Stream(StreamCondensed, Entity):
     Represents a Qlik Sense Stream with full attribution
     """
     custom_properties: List[CustomPropertyValue] = field(default_factory=list, hash=False)
-    owner: UserCondensed = field(default_factory=UserCondensed, hash=False)
+    owner: UserCondensed = field(default=None, hash=False)
     tags: List[TagCondensed] = field(default_factory=list, hash=False)
 
 
@@ -40,10 +46,16 @@ class StreamSchema(StreamCondensedSchema, EntitySchema):
     """
     A marshmallow schema corresponding to a Qlik Sense Stream object with full attribution
     """
-    custom_properties = ma.fields.Nested(nested=CustomPropertyValueSchema, many=True, required=False,
+    custom_properties = ma.fields.Nested(CustomPropertyValueSchema, many=True, required=False,
                                          data_key='customProperties')
-    owner = ma.fields.Nested(UserCondensedSchema, many=False, required=True)
+    owner = ma.fields.Nested(UserCondensedSchema, many=False, required=True, allow_none=True)
     tags = ma.fields.Nested(TagCondensedSchema, many=True, required=False)
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[Stream, dict]', **kwargs) -> dict:
+        if isinstance(data, Stream):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'Stream':

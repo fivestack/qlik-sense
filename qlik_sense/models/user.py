@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass, field, asdict
+from typing import List, Union
 
 import marshmallow as ma
 
@@ -13,7 +13,7 @@ class UserCondensed(EntityCondensed):
     """
     Represents a Qlik Sense User with limited attribution
     """
-    user_id: str = field(default=None, hash=True)
+    user_name: str = field(default=None, hash=True)
     user_directory: str = field(default=None, hash=True)
 
 
@@ -21,8 +21,14 @@ class UserCondensedSchema(EntityCondensedSchema):
     """
     A marshmallow schema corresponding to a Qlik Sense User object with limited attribution
     """
-    user_id: str = ma.fields.Str(required=True, data_key='userId')
+    user_name: str = ma.fields.Str(required=True, data_key='userId')
     user_directory: str = ma.fields.Str(required=True, data_key='userDirectory')
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[UserCondensed, dict]', **kwargs) -> dict:
+        if isinstance(data, UserCondensed):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'UserCondensed':
@@ -49,6 +55,12 @@ class UserAttributeSchema(AuditingSchema):
     attribute_value = ma.fields.Str(required=False, data_key='attributeValue')
     external_id = ma.fields.Str(required=False, data_key='externalId')
 
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[UserAttribute, dict]', **kwargs) -> dict:
+        if isinstance(data, UserAttribute):
+            return asdict(data)
+        return data
+
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'UserAttribute':
         return UserAttribute(**data)
@@ -62,7 +74,7 @@ class User(UserCondensed, Entity):
     custom_properties: List[CustomPropertyValue] = field(default_factory=list, hash=False)
     roles: List[str] = field(default_factory=list, hash=False)
     attributes: List[UserAttribute] = field(default_factory=list, hash=False)
-    is_inactive: bool = field(default_factory=False, hash=False)
+    is_inactive: bool = field(default=False, hash=False)
     is_removed_externally: bool = field(default=False, hash=False)
     is_blacklisted: bool = field(default=False, hash=False)
     delete_is_prohibited: bool = field(default=False, hash=False)
@@ -75,13 +87,19 @@ class UserSchema(UserCondensedSchema, EntitySchema):
     """
     custom_properties = ma.fields.Nested(nested=CustomPropertyValueSchema, many=True, required=False,
                                          data_key='customProperties')
-    roles = ma.fields.List(cls_or_instance=ma.fields.Str, required=False)
+    roles = ma.fields.List(cls_or_instance=ma.fields.Str, required=False, allow_none=True)
     attributes = ma.fields.Nested(UserAttributeSchema, many=True, required=False)
     is_inactive = ma.fields.Bool(required=False, data_key='inactive')
     is_removed_externally = ma.fields.Bool(required=True, data_key='removedExternally')
     is_blacklisted = ma.fields.Bool(required=True, data_key='blacklisted')
     delete_is_prohibited = ma.fields.Bool(required=False, data_key='deleteProhibited')
     tags = ma.fields.Nested(TagCondensedSchema, many=True, required=False)
+
+    @ma.pre_dump()
+    def pre_dump(self, data: 'Union[User, dict]', **kwargs) -> dict:
+        if isinstance(data, User):
+            return asdict(data)
+        return data
 
     @ma.post_load()
     def post_load(self, data: dict, **kwargs) -> 'User':

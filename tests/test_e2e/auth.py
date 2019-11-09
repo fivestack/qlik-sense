@@ -4,5 +4,5 @@ from pathlib import Path
 SCHEMA = 'https'
 HOST = ''
 CERT = Path('')
-USER_DIRECTORY = ''
-USER_NAME = ''
+TEST_USER_DIRECTORY = ''
+TEST_USER_NAME = ''

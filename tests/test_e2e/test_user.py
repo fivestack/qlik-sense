@@ -1,28 +1,16 @@
-from tests.conftest import SSLClient, user
-from tests.test_e2e import auth
+from tests.conftest import user
+from tests.test_e2e import config
 
-qs = SSLClient(scheme=auth.SCHEMA, host=auth.HOST, certificate=auth.CERT)
+qs = config.qs
 
 
 class TestUser:
 
-    user_name = 'pytest'
-    user_directory = 'pytest'
-    test_user = None
-
     def setup_method(self):
-        new_user = user.User(user_name=self.user_name,
-                             user_directory=self.user_directory,
-                             is_blacklisted=False,
-                             is_removed_externally=False)
-        self.test_user = qs.user.create(user=new_user)
-        verify_user_was_created = qs.user.get(id=self.test_user.id)
-        assert verify_user_was_created
+        self.test_user = config.create_test_user()
 
     def teardown_method(self):
-        qs.user.delete(user=self.test_user)
-        verify_user_was_deleted = qs.user.get(id=self.test_user.id)
-        assert verify_user_was_deleted is None
+        config.delete_test_user(test_user=self.test_user)
 
     def test_query_full(self):
         users = qs.user.query(full_attribution=True)
@@ -30,7 +18,7 @@ class TestUser:
             assert each_user.name is not None
 
     def test_query_count(self):
-        count = qs.user.query_count(filter_by="userDirectory eq 'INTERNAL'")
+        count = qs.user.query_count(filter_by=f"userDirectory eq '{self.test_user.user_directory}'")
         assert 0 < count
 
     def test_get_by_name_and_directory(self):

@@ -60,8 +60,12 @@ def create_test_apps() -> 'List[app.App]':
 
 
 def delete_test_apps(test_stream: 'stream.StreamCondensed', test_owner: 'user.UserCondensed'):
-    test_apps = qs_ssl.app.query(filter_by=f"stream.name eq '{test_stream.name}")
-    test_apps.append(qs_ssl.app.query(filter_by=f"owner.userId eq '{test_owner.user_name}' and "
-                                            f"owner.userDirectory eq '{test_owner.user_directory}'"))
-    for test_app in test_apps:
-        qs_ssl.app.delete(app=test_app)
+    test_apps_by_stream = qs_ssl.app.query(filter_by=f"stream.name eq '{test_stream.name}")
+    test_apps_by_owner = qs_ssl.app.query(filter_by=f"owner eq '{test_owner.id}'")
+    if isinstance(test_apps_by_stream, list):
+        test_apps = test_apps_by_stream.append(test_apps_by_owner)
+    else:
+        test_apps = test_apps_by_owner
+    if test_apps:
+        for test_app in test_apps:
+            qs_ssl.app.delete(app=test_app)

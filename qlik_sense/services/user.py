@@ -70,7 +70,7 @@ class UserService(base.BaseService):
                            full_attribution=full_attribution)
 
     def get_by_name_and_directory(self, user_name: str, directory: str,
-                                  full_attribution: bool = False) -> 'Optional[List[UserCondensed]]':
+                                  full_attribution: bool = False) -> 'Optional[Union[UserCondensed, User]]':
         """
         This method is such a common use case of the query() method that it gets its own method
 
@@ -83,7 +83,10 @@ class UserService(base.BaseService):
         Returns: the Qlik Sense condensed User(s) that fit the criteria
         """
         filter_by = f"userId eq '{user_name}' and userDirectory eq '{directory}'"
-        return self.query(filter_by=filter_by, full_attribution=full_attribution)
+        users = self.query(filter_by=filter_by, full_attribution=full_attribution)
+        if isinstance(users, list) and len(users) > 0:
+            return users[0]
+        return
 
     def get(self, id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[User]':
         """

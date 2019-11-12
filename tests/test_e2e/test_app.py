@@ -18,6 +18,9 @@ class TestApp:
         config.delete_test_stream(self.test_stream)
         config.delete_test_user(self.test_owner)
 
+    def test_setup_and_teardown(self):
+        assert 1 == 1
+
     def test_query_full(self):
         apps = qs.app.query(filter=f"stream.name eq '{self.test_stream.name}'", full_attribution=True)
         for each_app in apps:

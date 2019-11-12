@@ -35,7 +35,7 @@ class AppCondensedSchema(EntityCondensedSchema):
     app_id = ma.fields.Str(required=False, data_key='appId')
     published_date = ma.fields.DateTime(required=False, data_key='publishTime')
     is_published = ma.fields.Bool(required=False, data_key='published')
-    stream = ma.fields.Nested(StreamCondensedSchema, many=False, required=False)
+    stream = ma.fields.Nested(StreamCondensedSchema, many=False, required=False, allow_none=True)
     saved_in_product_version = ma.fields.Str(required=False, data_key='savedInProductVersion')
     migration_hash = ma.fields.Str(required=False, data_key='migrationHash')
     availability_status = ma.fields.Int(required=False, data_key='availabilityStatus')
@@ -63,7 +63,7 @@ class App(AppCondensed, Entity):
     tags: List[TagCondensed] = field(default_factory=list, hash=False)
     description: str = field(default=None, hash=False)
     file_size: int = field(default=None, hash=False)
-    last_reload_time: datetime = field(default=None, hash=False)
+    last_reload_date: datetime = field(default=None, hash=False)
     thumbnail: str = field(default=None, hash=False)
     dynamic_color: str = field(default=None, hash=False)
 
@@ -82,7 +82,7 @@ class AppSchema(AppCondensedSchema, EntitySchema):
     file_size = ma.fields.Int(required=False, data_key='fileSize')
     last_reload_date = ma.fields.DateTime(required=False, data_key='lastReloadTime')
     thumbnail = ma.fields.Str(required=False)
-    dynamic_color = ma.fields.Str(required=False)
+    dynamic_color = ma.fields.Str(required=False, data_key='dynamicColor')
 
     @ma.pre_dump()
     def pre_dump(self, data: 'Union[App, dict]', **kwargs) -> dict:

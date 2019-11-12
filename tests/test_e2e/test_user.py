@@ -12,10 +12,13 @@ class TestUser:
     def teardown_method(self):
         config.delete_test_user(test_user=self.test_user)
 
+    def test_setup_and_teardown(self):
+        assert 1 == 1
+
     def test_query_full(self):
         users = qs.user.query(full_attribution=True)
         for each_user in users:
-            assert each_user.name is not None
+            assert each_user.user_name is not None
 
     def test_query_count(self):
         count = qs.user.query_count(filter_by=f"userDirectory eq '{self.test_user.user_directory}'")

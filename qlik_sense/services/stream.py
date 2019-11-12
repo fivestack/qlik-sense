@@ -2,7 +2,7 @@
 This module provides the mechanics for interacting with Qlik Sense streams. It uses a one-to-one model
 to wrap the QRS endpoints and uses marshmallow to parse the results into Qlik Sense Stream objects where appropriate.
 """
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 from dataclasses import asdict
 
 from qlik_sense.models.stream import StreamCondensedSchema, StreamSchema
@@ -67,7 +67,7 @@ class StreamService(base.BaseService):
         return self._query(schema=schema, filter_by=filter_by, order_by=order_by, privileges=privileges,
                            full_attribution=full_attribution)
 
-    def get_by_name(self, name: str, full_attribution: bool = False) -> 'Optional[List[StreamCondensed]]':
+    def get_by_name(self, name: str, full_attribution: bool = False) -> 'Optional[Union[StreamCondensed, Stream]]':
         """
         This method is such a common use case of the query() method that it gets its own method
 
@@ -79,7 +79,10 @@ class StreamService(base.BaseService):
         Returns: the Qlik Sense condensed Stream(s) that fit the criteria
         """
         filter_by = f"name eq '{name}'"
-        return self.query(filter_by=filter_by, full_attribution=full_attribution)
+        streams = self.query(filter_by=filter_by, full_attribution=full_attribution)
+        if isinstance(streams, list) and len(streams) > 0:
+            return streams[0]
+        return
 
     def get(self, id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[Stream]':
         """

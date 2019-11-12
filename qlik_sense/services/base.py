@@ -9,7 +9,7 @@ import abc
 from datetime import datetime
 
 from qlik_sense.models.base import EntityCondensedSchema, EntitySchema
-from qlik_sense.services import util
+from qlik_sense.services.util import QSAPIRequest
 
 if TYPE_CHECKING:
     from qlik_sense.models.base import EntityCondensed, Entity
@@ -39,7 +39,7 @@ class BaseService(abc.ABC):
     url = None
     client = None
 
-    def _call(self, request: 'util.QSAPIRequest') -> 'requests.Response':
+    def _call(self, request: 'QSAPIRequest') -> 'requests.Response':
         return self.client.call(**asdict(request))
 
     def _query(self, schema: 'Union[EntityCondensedSchema, EntitySchema]',
@@ -67,7 +67,7 @@ class BaseService(abc.ABC):
             'orderby': order_by,
             'privileges': privileges
         }
-        request = util.QSAPIRequest(method='GET', url=url, params=params)
+        request = QSAPIRequest(method='GET', url=url, params=params)
         response = self._call(request)
         if 200 <= response.status_code < 300:
             return schema.loads(response.content, many=True)
@@ -83,7 +83,7 @@ class BaseService(abc.ABC):
         Returns: the number of Qlik Sense Entities that meet the query_string criteria (or None)
         """
         params = {'filter': filter_by}
-        request = util.QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
+        request = QSAPIRequest(method='GET', url=f'{self.url}/count', params=params)
         response = self._call(request)
         if 200 <= response.status_code < 300:
             return int(response.json()['value'])
@@ -100,7 +100,7 @@ class BaseService(abc.ABC):
 
         Returns: a Qlik Sense Entity with full attribution
         """
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='GET',
             url=f'{self.url}/{id}',
             params={'privileges': privileges}
@@ -123,7 +123,7 @@ class BaseService(abc.ABC):
 
         Returns: a default entity
         """
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='GET',
             url=f'/qrs/about/api/default/{entity_type}',
             params={'listentries': list_entries}
@@ -146,7 +146,7 @@ class BaseService(abc.ABC):
         entity.created_date = datetime.now()
         entity.modified_date = datetime.now()
         _logger.debug(f'__CREATE {entity}')
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='POST',
             url=f'{self.url}',
             params={'privileges': privileges},
@@ -170,7 +170,7 @@ class BaseService(abc.ABC):
         for entity in entities:
             entity.created_date = datetime.now()
             entity.modified_date = datetime.now()
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='POST',
             url=f'{self.url}/many',
             params={'privileges': privileges},
@@ -191,7 +191,7 @@ class BaseService(abc.ABC):
             entity: entity to update
             privileges:
         """
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='PUT',
             url=f'{self.url}/{entity.id}',
             params={'privileges': privileges},
@@ -209,7 +209,7 @@ class BaseService(abc.ABC):
         Args:
             entity: entity to delete
         """
-        request = util.QSAPIRequest(
+        request = QSAPIRequest(
             method='DELETE',
             url=f'{self.url}/{entity.id}'
         )

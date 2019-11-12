@@ -1,8 +1,18 @@
-from typing import Optional
+from typing import Optional, Union
 
 import requests
 
-from .conftest import services, app, stream, user, util, fake_client
+from .conftest import services, app, stream, user, util, Client
+
+
+class FakeClient(Client):
+
+    def __init__(self):
+        super().__init__(scheme='https', host='localhost', port=80)
+
+    def call(self, method: str, url: str, params: 'Optional[dict]' = None,
+             data: 'Optional[Union[str, list, dict]]' = None) -> 'requests.Response':
+        pass
 
 
 class FakeAppService(services.AppService):
@@ -12,7 +22,7 @@ class FakeAppService(services.AppService):
     logged in the instance so that they can be inspected by the unit tests. Mock objects are returned as necessary.
     """
     def __init__(self):
-        super().__init__(client=fake_client)
+        super().__init__(client=FakeClient())
         self.requests = []
         self._apps = list()
         self.client.app = self
@@ -42,7 +52,7 @@ class FakeStreamService(services.StreamService):
     logged in the instance so that they can be inspected by the unit tests. Mock objects are returned as necessary.
     """
     def __init__(self):
-        super().__init__(client=fake_client)
+        super().__init__(client=FakeClient())
         self.requests = []
         self._streams = list()
         self.client.stream = self
@@ -68,7 +78,7 @@ class FakeUserService(services.UserService):
     logged in the instance so that they can be inspected by the unit tests. Mock objects are returned as necessary.
     """
     def __init__(self):
-        super().__init__(client=fake_client)
+        super().__init__(client=FakeClient())
         self.requests = []
         self._users = list()
         self.client.user = self

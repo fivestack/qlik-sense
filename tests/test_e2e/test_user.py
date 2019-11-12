@@ -1,7 +1,7 @@
 from tests.conftest import user
 from tests.test_e2e import config
 
-qs = config.qs
+qs = config.qs_ssl
 
 
 class TestUser:
@@ -33,17 +33,19 @@ class TestUser:
         assert 'not_pytest' == updated_user.name
 
     def test_create_many(self):
-        new_user1 = user.User(user_name='pytest1', user_directory=self.user_directory,
+        new_user1 = user.User(user_name='pytest1', user_directory=self.test_user.user_directory,
                               is_blacklisted=False, is_removed_externally=False)
-        new_user2 = user.User(user_name='pytest2', user_directory=self.user_directory,
+        new_user2 = user.User(user_name='pytest2', user_directory=self.test_user.user_directory,
                               is_blacklisted=False, is_removed_externally=False)
         qs.user.create_many(users=[new_user1, new_user2])
         self._validate_create_many_and_delete(expected_name=new_user1.user_name)
         self._validate_create_many_and_delete(expected_name=new_user2.user_name)
 
     def _validate_create_many_and_delete(self, expected_name: str):
-        user_exists = qs.user.get_by_name_and_directory(user_name=expected_name, directory=self.user_directory)
+        user_exists = qs.user.get_by_name_and_directory(user_name=expected_name,
+                                                        directory=self.test_user.user_directory)
         assert user_exists
         qs.user.delete(user=user_exists)
-        user_was_deleted = qs.user.get_by_name_and_directory(user_name=expected_name, directory=self.user_directory)
+        user_was_deleted = qs.user.get_by_name_and_directory(user_name=expected_name,
+                                                             directory=self.test_user.user_directory)
         assert user_was_deleted is None

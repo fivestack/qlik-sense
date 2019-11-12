@@ -5,8 +5,8 @@ to wrap the QRS endpoints and uses marshmallow to parse the results into Qlik Se
 from typing import TYPE_CHECKING, List, Optional, Iterable
 from dataclasses import asdict
 
-import uuid
-
+import qlik_sense.services.base
+import qlik_sense.services.util
 from qlik_sense.models.app import AppCondensedSchema, AppSchema, AppExportSchema
 from qlik_sense.services import util, base
 
@@ -25,7 +25,6 @@ class AppService(base.BaseService):
     Args:
         client: a Client class that provides an interface over the Qlik Sense APIs
 
-
     Supported Methods:
 
         - qrs/app: GET
@@ -33,11 +32,12 @@ class AppService(base.BaseService):
         - qrs/app/full: GET
         - qrs/app/{app.id}: GET, PUT, DELETE
         - qrs/app/{app.id}/copy: POST
-        - qrs/app/{app.id}/export/{token}: POST, DELETE
+        - qrs/app/{app.id}/replace: PUT
         - qrs/app/{app.id}/reload: POST
         - qrs/app/{app.id}/publish: PUT
-        - qrs/app/{app.id}/replace: PUT
         - qrs/app/{app.id}/unpublish: POST
+        - qrs/app/{app.id}/export: GET
+        - qrs/app/{app.id}/export/{token}: POST, DELETE
 
     Unsupported Methods:
 
@@ -49,7 +49,6 @@ class AppService(base.BaseService):
         - qrs/app/table: POST
         - qrs/app/upload: POST
         - qrs/app/upload/replace: POST
-        - qrs/app/{app.id}/export: GET
         - qrs/app/{app.id}/hubinfo: GET
         - qrs/app/{app.id}/migrate: PUT
         - qrs/app/{app.id}/migrationcompleted: POST
@@ -134,19 +133,6 @@ class AppService(base.BaseService):
         """
         self._delete(entity=app)
 
-    def reload(self, app: 'AppCondensed'):
-        """
-        This method reloads the provided app
-
-        Args:
-            app: app to reload
-        """
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}/{app.id}/reload'
-        )
-        self._call(request)
-
     def copy(self, app: 'AppCondensed', name: str = None, include_custom_properties: bool = False) -> 'Optional[App]':
         """
         This method copies the provided app
@@ -163,94 +149,9 @@ class AppService(base.BaseService):
             'name': name,
             'includecustomproperties': include_custom_properties
         }
-        request = util.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='POST',
             url=f'{self.url}/{app.id}/copy',
-            params=params
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.content)
-        return None
-
-    def create_export(self, app: 'AppCondensed', keep_data: bool = False) -> 'Optional[AppExport]':
-        """
-        This method returns a download path for the provided app. It can be passed into download_file() to obtain
-        the app itself
-
-        Args:
-            app: app to export
-            keep_data: indicates if the data should be exported with the app
-
-        Returns: the app export object that contains attributes like download_path and export_token
-        """
-        schema = AppExportSchema()
-        token = uuid.uuid4()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}/{app.id}/export/{token}',
-            params={'skipdata': not keep_data}
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.content)
-        return None
-
-    def unpublish(self, app: 'AppCondensed') -> 'Optional[App]':
-        """
-        Unpublishes the provided app
-
-        Args:
-            app: app to unpublish
-
-        Returns: a Qlik Sense App object for the un-published app
-        """
-        schema = AppSchema()
-        request = util.QSAPIRequest(
-            method='POST',
-            url=f'{self.url}/{app.id}/unpublish'
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.content)
-        return None
-
-    def delete_export(self, app_export: 'AppExport') -> 'Optional[AppExport]':
-        """
-        This method cancels the export for the provided app.
-
-        Args:
-            app_export: app export metadata, contains the app getting exported and the export token
-        """
-        schema = AppExportSchema()
-        request = util.QSAPIRequest(
-            method='DELETE',
-            url=f'{self.url}/{app_export.app_id}/export/{app_export.export_token}'
-        )
-        response = self._call(request)
-        if 200 <= response.status_code < 300:
-            return schema.loads(response.content)
-        return None
-
-    def publish(self, app: 'AppCondensed', stream: 'StreamCondensed', name: str = None) -> 'Optional[App]':
-        """
-        This method will publish the provided app to the provided stream
-
-        Args:
-            app: app to publish
-            stream: stream to which to publish the app
-            name: name of the published app
-
-        Returns: a Qlik Sense App object for the published app
-        """
-        schema = AppSchema()
-        params = {
-            'stream': stream.id,
-            'name': name if name else app.name
-        }
-        request = util.QSAPIRequest(
-            method='PUT',
-            url=f'{self.url}/{app.id}/publish',
             params=params
         )
         response = self._call(request)
@@ -269,10 +170,127 @@ class AppService(base.BaseService):
         Returns: a Qlik Sense App object for the new app
         """
         schema = AppSchema()
-        request = util.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='PUT',
             url=f'{self.url}/{app.id}/replace',
             params={'app': app_to_replace.id}
+        )
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return schema.loads(response.content)
+        return None
+
+    def reload(self, app: 'AppCondensed'):
+        """
+        This method reloads the provided app
+
+        Args:
+            app: app to reload
+        """
+        request = qlik_sense.services.util.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/reload'
+        )
+        self._call(request)
+
+    def publish(self, app: 'AppCondensed', stream: 'StreamCondensed', name: str = None) -> 'Optional[App]':
+        """
+        This method will publish the provided app to the provided stream
+
+        Args:
+            app: app to publish
+            stream: stream to which to publish the app
+            name: name of the published app
+
+        Returns: a Qlik Sense App object for the published app
+        """
+        schema = AppSchema()
+        params = {
+            'stream': stream.id,
+            'name': name if name else app.name
+        }
+        request = qlik_sense.services.util.QSAPIRequest(
+            method='PUT',
+            url=f'{self.url}/{app.id}/publish',
+            params=params
+        )
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return schema.loads(response.content)
+        return None
+
+    def unpublish(self, app: 'AppCondensed') -> 'Optional[App]':
+        """
+        Unpublishes the provided app
+
+        Args:
+            app: app to unpublish
+
+        Returns: a Qlik Sense App object for the un-published app
+        """
+        schema = AppSchema()
+        request = qlik_sense.services.util.QSAPIRequest(
+            method='POST',
+            url=f'{self.url}/{app.id}/unpublish'
+        )
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return schema.loads(response.content)
+        return None
+
+    def get_export_token(self, app: 'AppCondensed') -> 'Optional[str]':
+        """
+        This method returns an export token for an app
+
+        Args:
+            app: app to export
+
+        Returns: an export token as a UUID
+        """
+        request = qlik_sense.services.util.QSAPIRequest(
+            method='GET',
+            url=f'{self.url}/{app.id}/export'
+        )
+        response = self._call(request)
+        if 200 <= response.status_code < 300:
+            return response.json()['value']
+        return
+
+    def create_export(self, app: 'AppCondensed', keep_data: bool = False) -> 'Optional[AppExport]':
+        """
+        This method returns a download path for the provided app. It can be passed into download_file() to obtain
+        the app itself
+
+        Args:
+            app: app to export
+            keep_data: indicates if the data should be exported with the app
+
+        Returns: the app export object that contains attributes like download_path and export_token
+        """
+        schema = AppExportSchema()
+        token = self.get_export_token(app=app)
+        if token:
+            request = qlik_sense.services.util.QSAPIRequest(
+                method='POST',
+                url=f'{self.url}/{app.id}/export/{token}',
+                params={'skipdata': not keep_data}
+            )
+            response = self._call(request)
+            if 200 <= response.status_code < 300:
+                return schema.loads(response.content)
+        return None
+
+    def delete_export(self, app_export: 'AppExport') -> 'Optional[AppExport]':
+        """
+        This method cancels the export for the provided app.
+
+        Args:
+            app_export: app export metadata, contains the app getting exported and the export token
+        """
+        schema = AppExportSchema()
+        request = qlik_sense.services.util.QSAPIRequest(
+            method='DELETE',
+            url=f'{self.url}/{app_export.app_id}/export/{app_export.export_token}'
         )
         response = self._call(request)
         if 200 <= response.status_code < 300:
@@ -288,7 +306,7 @@ class AppService(base.BaseService):
 
         Returns: the file as an iterable
         """
-        request = util.QSAPIRequest(
+        request = qlik_sense.services.util.QSAPIRequest(
             method='GET',
             url=f'{self.url}/{app_export.download_path}'
         )

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+import qlik_sense.services.base
 import qlik_sense.services.util
 import qlik_sense.models.stream
 from .fakes import FakeAppService
@@ -36,6 +37,9 @@ class TestApp:
         )
         assert request in self.client.app.requests
 
+    def test_query_count(self):
+        pass
+
     def test_get_by_name_and_stream(self):
         self.client.app.get_by_name_and_stream(app_name='My App', stream_name='My Stream')
         request = qlik_sense.services.util.QSAPIRequest(
@@ -71,15 +75,6 @@ class TestApp:
         )
         assert request in self.client.app.requests
 
-    def test_reload(self):
-        app = self.client.app.get_fake_app(id='app_1')
-        self.client.app.reload(app=app)
-        request = app.QSAPIRequest(
-            method='POST',
-            url=f'/qrs/app/{app.id}/reload'
-        )
-        assert request in self.client.app.requests
-
     def test_copy(self):
         app = self.client.app.get_fake_app(id='app_1')
         self.client.app.copy(app=app, name=app.name)
@@ -87,25 +82,6 @@ class TestApp:
             method='POST',
             url=f'/qrs/app/{app.id}/copy',
             params={'name': app.name}
-        )
-        assert request in self.client.app.requests
-
-    def test_export(self):
-        app = self.client.app.get_fake_app(id='app_1')
-        self.client.app.create_export(app=app)
-        for request in self.client.app.requests:
-            if request.method == 'POST':
-                url = request.url
-                assert ['qrs', 'app', app.id, 'export'] == url.split('/')[1:5]
-
-    def test_publish(self):
-        app = self.client.app.get_fake_app(id='app_1')
-        stream = qlik_sense.models.stream.Stream(id='stream_1', name='My Stream')
-        self.client.app.publish(app=app, stream=stream)
-        request = app.QSAPIRequest(
-            method='PUT',
-            url=f'/qrs/app/{app.id}/publish',
-            params={'stream': stream.id}
         )
         assert request in self.client.app.requests
 
@@ -119,6 +95,43 @@ class TestApp:
             params={'app': app_to_replace.id}
         )
         assert request in self.client.app.requests
+
+    def test_reload(self):
+        app = self.client.app.get_fake_app(id='app_1')
+        self.client.app.reload(app=app)
+        request = app.QSAPIRequest(
+            method='POST',
+            url=f'/qrs/app/{app.id}/reload'
+        )
+        assert request in self.client.app.requests
+
+    def test_publish(self):
+        app = self.client.app.get_fake_app(id='app_1')
+        stream = qlik_sense.models.stream.Stream(id='stream_1', name='My Stream')
+        self.client.app.publish(app=app, stream=stream)
+        request = app.QSAPIRequest(
+            method='PUT',
+            url=f'/qrs/app/{app.id}/publish',
+            params={'stream': stream.id}
+        )
+        assert request in self.client.app.requests
+
+    def test_unpublish(self):
+        pass
+
+    def test_get_export_token(self):
+        pass
+
+    def test_create_export(self):
+        app = self.client.app.get_fake_app(id='app_1')
+        self.client.app.create_export(app=app)
+        for request in self.client.app.requests:
+            if request.method == 'POST':
+                url = request.url
+                assert ['qrs', 'app', app.id, 'export'] == url.split('/')[1:5]
+
+    def test_delete_export(self):
+        pass
 
     def test_download_file(self):
         url = 'path/to/my/download'

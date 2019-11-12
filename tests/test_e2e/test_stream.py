@@ -1,7 +1,7 @@
 from tests.conftest import stream
 from tests.test_e2e import config
 
-qs = config.qs
+qs = config.qs_ssl
 
 
 class TestStream:

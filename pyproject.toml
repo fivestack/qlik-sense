@@ -6,7 +6,7 @@ build-backend = "flit.buildapi"
 module = "qlik_sense"
 author = "Mike Alfare"
 author-email = "alfare@gmail.com"
-home-page = "https://github.com/mikealfare/qlik_sense"
+home-page = "https://github.com/fivestack/qlik_sense"
 
 requires = [
     "requests >=2.22.0,<3.0",

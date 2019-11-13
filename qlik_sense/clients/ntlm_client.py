@@ -1,8 +1,3 @@
-"""
-The Client class is an interface over the QlikSense APIs. The client sets up authentication, logging, and base
-settings for interacting with the Qlik Sense APIs. All calls are configured by appropriate lower level services and
-then passed up to this class to execute.
-"""
 import logging
 import sys
 
@@ -17,20 +12,22 @@ _logger.addHandler(logging.StreamHandler(sys.stdout))
 
 class NTLMClient(base.Client):
     """
-    An interface over the QlikSense APIs
+    An interface over the QlikSense QRS API that uses Windows AD authentication. You can pass in an AD domain, user
+    name, and password to explicitly execute calls as a specific user. Alternatively, you can provide none of these
+    arguments and the current Windows user will be used via SSPI authentication.
 
     Args:
-        scheme: http/https
         host: hostname to connect to
         port: port number
+        scheme: http/https, defaults to https
         domain: AD domain for the user
         username: the user
         password: the password for the user
     """
 
-    def __init__(self, scheme: str, host: str, port: int = None,
+    def __init__(self, host: str, port: int = None, scheme: str = 'https',
                  domain: str = None, username: str = None, password: str = None):
-        super().__init__(scheme=scheme, host=host, port=port)
+        super().__init__(host=host, port=port, scheme=scheme)
 
         if domain and username and password:
             _logger.debug('__SET NTLM AUTH')

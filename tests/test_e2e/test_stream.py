@@ -8,7 +8,7 @@ class TestStream:
 
     def setup_method(self):
         self.test_owner = config.create_test_user()
-        self.test_stream = config.create_test_stream()
+        self.test_stream = config.create_test_stream(test_owner=self.test_owner)
 
     def teardown_method(self):
         config.delete_test_stream(test_stream=self.test_stream)

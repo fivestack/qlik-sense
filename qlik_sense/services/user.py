@@ -6,15 +6,16 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from dataclasses import asdict
 
 from qlik_sense.models.user import UserCondensedSchema, UserSchema
-from qlik_sense.services import util, base
+from .base import BaseService
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
     from qlik_sense.models.user import UserCondensed, User
+    from .util import QSAPIRequest
     import requests
 
 
-class UserService(base.BaseService):
+class UserService(BaseService):
     """
     UserService wraps each one of the user-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -44,7 +45,7 @@ class UserService(base.BaseService):
         self.client = client
         self.url = '/qrs/user'
 
-    def _call(self, request: 'util.QSAPIRequest') -> 'requests.Response':
+    def _call(self, request: 'QSAPIRequest') -> 'requests.Response':
         return self.client.call(**asdict(request))
 
     def query(self, filter_by: str = None, order_by: str = None, privileges: 'Optional[List[str]]' = None,

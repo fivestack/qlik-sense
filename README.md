@@ -34,29 +34,15 @@ pip install qlik_sense
 
 # Examples
 
-Use this library to reload a Qlik Sense app:
+Use this library to work with Qlik Sense apps:
 ```python
 
-from qlik_sense import Client
+from qlik_sense import NTLMClient
 
-user = {
-    'directory': 'DIRECTORY',
-    'username': 'USERNAME',
-    'password': 'PASSWORD'
-}
-qs = Client(schema='https', host='local_host', port=80, user=user)
+qs = NTLMClient(host='url/to/qlik/sense/server')
 app = qs.app.get_by_name_and_stream(app_name='My App', stream_name='My Stream')
-qs.app.reload(app)
+qs.app.reload(app=app)
 ```
-
-# Acknowledgements
-
-This package was inspired by Rafael Sanz's work:
-
-https://github.com/rafael-sanz/qsAPI/blob/master/qsAPI.py
-
-I would like to acknowledge the work he spent to figure out all of the logistics of Qlik Sense's APIs.
-I used modified versions of his Controller (Client) and QRS/QPS (___Service) classes in this library.
 
 # Full Documentation
 

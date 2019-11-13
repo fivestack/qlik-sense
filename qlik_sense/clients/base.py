@@ -6,7 +6,6 @@ then passed up to this class to execute.
 import logging
 import sys
 from typing import Optional, Union
-import json
 import abc
 import random
 import string
@@ -34,11 +33,11 @@ class Client(abc.ABC):
     _cert = None
     _verify = False
 
-    def __init__(self, scheme: str, host: str, port: int):
+    def __init__(self, host: str, port: int, scheme: str = 'https'):
         _logger.debug('__SET BASE URL')
-        self._scheme = scheme
         self._host = host
         self._port = port
+        self._scheme = scheme
 
         _logger.debug('__SET SERVICES')
         self.app = services.AppService(self)
@@ -89,22 +88,6 @@ class Client(abc.ABC):
         params.update({'Xrfkey': xrf_key})
         return params
 
-    @staticmethod
-    def _get_data(data: 'Optional[Union[str, list, dict]]' = None) -> 'Optional[str]':
-        """
-        Formats the data to be inserted into a request body
-
-        Args:
-            data: data to be inserted into the request body
-
-        Returns: the data as a string, in json format if it was originally a dictionary or a list
-        """
-        if not data:
-            return None
-        if isinstance(data, list) or isinstance(data, dict):
-            data = json.dumps(data)
-        return data
-
     def _get_prepared_request(self, method: str, url: str, params: dict, data: str) -> 'requests.PreparedRequest':
         """
         Builds a prepared request
@@ -122,7 +105,7 @@ class Client(abc.ABC):
         request = requests.Request(method=method,
                                    url=self._get_url(url=url),
                                    headers=self._get_headers(xrf_key=xrf_key),
-                                   data=self._get_data(data),
+                                   data=data,
                                    params=self._get_params(xrf_key=xrf_key, params=params),
                                    auth=self._auth)
         _logger.debug(f'__REQUEST BUILT {request.method} <{request.url}> '
@@ -168,7 +151,7 @@ class Client(abc.ABC):
         """
         count = 0
         while response.is_redirect:
-            _logger.debug('f__REDIRECT ENCOUNTERED')
+            _logger.debug('__REDIRECT ENCOUNTERED')
             count += 1
             if count > session.max_redirects:
                 raise requests.HTTPError('Exceeded max redirects')
@@ -192,12 +175,11 @@ class Client(abc.ABC):
 
         Returns: a Response object
         """
-        _logger.info(f'API CALL {method} <{url}> params={params} data={len(data) if data else None}')
+        _logger.info(f'API REQUEST {method} <{url}> params={params} data={len(data) if data else None}')
         prepared_request = self._get_prepared_request(method=method, url=url, params=params, data=data)
         session = requests.Session()
         response = self._send_request(request=prepared_request, session=session)
         if response.is_redirect:
             response = self._handle_redirect(response=response, headers=prepared_request.headers, session=session)
-
-        _logger.debug(f'__RESPONSE RECEIVED {response.text} headers={response.headers}')
+        _logger.info(f'API RESPONSE {response.text} headers={response.headers}')
         return response

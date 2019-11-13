@@ -9,7 +9,7 @@ import abc
 from datetime import datetime
 
 from qlik_sense.models.base import EntityCondensedSchema, EntitySchema
-from qlik_sense.services.util import QSAPIRequest
+from .util import QSAPIRequest
 
 if TYPE_CHECKING:
     from qlik_sense.models.base import EntityCondensed, Entity
@@ -22,11 +22,8 @@ _logger.setLevel(logging.DEBUG)
 
 class BaseService(abc.ABC):
     """
-    BaseService wraps each one of the generic entity QlikSense endpoints in a method. This buffers the application
+    BaseService wraps each one of the generic entity Qlik Sense endpoints in a method. This buffers the application
     from API updates and makes standing up/maintaining new entities easier and more consistent.
-
-    Args:
-        client: a Client class that provides an interface over the Qlik Sense APIs
 
     Supported Methods:
 

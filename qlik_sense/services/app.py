@@ -5,10 +5,9 @@ to wrap the QRS endpoints and uses marshmallow to parse the results into Qlik Se
 from typing import TYPE_CHECKING, List, Optional, Iterable
 from dataclasses import asdict
 
-import qlik_sense.services.base
-import qlik_sense.services.util
 from qlik_sense.models.app import AppCondensedSchema, AppSchema, AppExportSchema
-from qlik_sense.services import util, base
+from .base import BaseService
+from .util import QSAPIRequest
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
     import requests
 
 
-class AppService(base.BaseService):
+class AppService(BaseService):
     """
     AppService wraps each one of the app-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -62,7 +61,7 @@ class AppService(base.BaseService):
         self.client = client
         self.url = '/qrs/app'
 
-    def _call(self, request: 'util.QSAPIRequest') -> 'requests.Response':
+    def _call(self, request: 'QSAPIRequest') -> 'requests.Response':
         return self.client.call(**asdict(request))
 
     def query(self, filter_by: str = None, order_by: str = None, privileges: 'Optional[List[str]]' = None,
@@ -98,7 +97,10 @@ class AppService(base.BaseService):
         Returns: the Qlik Sense app(s) that fit the criteria
         """
         filter_by = f"name eq '{app_name}' and stream.name eq '{stream_name}'"
-        return self.query(filter_by=filter_by)
+        apps = self.query(filter_by=filter_by)
+        if isinstance(apps, list) and len(apps) > 0:
+            return apps[0]
+        return
 
     def get(self, id: str, privileges: 'Optional[List[str]]' = None) -> 'Optional[App]':
         """
@@ -149,7 +151,7 @@ class AppService(base.BaseService):
             'name': name,
             'includecustomproperties': include_custom_properties
         }
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='POST',
             url=f'{self.url}/{app.id}/copy',
             params=params
@@ -163,6 +165,10 @@ class AppService(base.BaseService):
         """
         This method replaces the target app with the provided app
 
+        .. warning ::
+            This method is not working as expected. In testing, the returned app appears to be identical to the app
+            to be replaced, suggesting that it was not actually replaced.
+
         Args:
             app: app to copy
             app_to_replace: app to replace
@@ -170,7 +176,7 @@ class AppService(base.BaseService):
         Returns: a Qlik Sense App object for the new app
         """
         schema = AppSchema()
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='PUT',
             url=f'{self.url}/{app.id}/replace',
             params={'app': app_to_replace.id}
@@ -187,7 +193,7 @@ class AppService(base.BaseService):
         Args:
             app: app to reload
         """
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='POST',
             url=f'{self.url}/{app.id}/reload'
         )
@@ -209,7 +215,7 @@ class AppService(base.BaseService):
             'stream': stream.id,
             'name': name if name else app.name
         }
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='PUT',
             url=f'{self.url}/{app.id}/publish',
             params=params
@@ -223,13 +229,17 @@ class AppService(base.BaseService):
         """
         Unpublishes the provided app
 
+        .. warning ::
+            The current version of the API being used for development (may not be up to date) indicates that this is
+            not implemented.
+
         Args:
             app: app to unpublish
 
         Returns: a Qlik Sense App object for the un-published app
         """
         schema = AppSchema()
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='POST',
             url=f'{self.url}/{app.id}/unpublish'
         )
@@ -247,7 +257,7 @@ class AppService(base.BaseService):
 
         Returns: an export token as a UUID
         """
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='GET',
             url=f'{self.url}/{app.id}/export'
         )
@@ -270,7 +280,7 @@ class AppService(base.BaseService):
         schema = AppExportSchema()
         token = self.get_export_token(app=app)
         if token:
-            request = qlik_sense.services.util.QSAPIRequest(
+            request = QSAPIRequest(
                 method='POST',
                 url=f'{self.url}/{app.id}/export/{token}',
                 params={'skipdata': not keep_data}
@@ -284,11 +294,15 @@ class AppService(base.BaseService):
         """
         This method cancels the export for the provided app.
 
+        .. warning ::
+            This method is not behaving as expected. The AppExport object that is returned has a zero-length download
+            path, but indicates that the export is not cancelled (cancelled = False).
+
         Args:
             app_export: app export metadata, contains the app getting exported and the export token
         """
         schema = AppExportSchema()
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='DELETE',
             url=f'{self.url}/{app_export.app_id}/export/{app_export.export_token}'
         )
@@ -301,12 +315,15 @@ class AppService(base.BaseService):
         """
         This method downloads an app given a download link
 
+        .. warning ::
+            This method has not been tested.
+
         Args:
             app_export: app export metadata, contains the app getting exported, the download path, and the export token
 
         Returns: the file as an iterable
         """
-        request = qlik_sense.services.util.QSAPIRequest(
+        request = QSAPIRequest(
             method='GET',
             url=f'{self.url}/{app_export.download_path}'
         )

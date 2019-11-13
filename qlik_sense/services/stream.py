@@ -6,15 +6,16 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from dataclasses import asdict
 
 from qlik_sense.models.stream import StreamCondensedSchema, StreamSchema
-from qlik_sense.services import util, base
+from .base import BaseService
 
 if TYPE_CHECKING:
     from qlik_sense.clients.base import Client
     from qlik_sense.models.stream import StreamCondensed, Stream
+    from .util import QSAPIRequest
     import requests
 
 
-class StreamService(base.BaseService):
+class StreamService(BaseService):
     """
     StreamService wraps each one of the stream-based QlikSense endpoints in a method. This buffers the application
     from API updates.
@@ -42,7 +43,7 @@ class StreamService(base.BaseService):
         self.client = client
         self.url = '/qrs/stream'
 
-    def _call(self, request: 'util.QSAPIRequest') -> 'requests.Response':
+    def _call(self, request: 'QSAPIRequest') -> 'requests.Response':
         return self.client.call(**asdict(request))
 
     def query(self, filter_by: str = None, order_by: str = None, privileges: 'Optional[List[str]]' = None,
@@ -131,7 +132,8 @@ class StreamService(base.BaseService):
             stream.id = self.get_new_id()
         return self._create(schema=StreamSchema(), entity=stream, privileges=privileges)
 
-    def create_many(self, streams: 'List[Stream]', privileges: 'Optional[List[str]]' = None) -> 'Optional[List[Stream]]':
+    def create_many(self, streams: 'List[Stream]',
+                    privileges: 'Optional[List[str]]' = None) -> 'Optional[List[Stream]]':
         """
         This method creates new streams on the server with the provided attribution
 

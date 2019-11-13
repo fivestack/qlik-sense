@@ -1,8 +1,3 @@
-"""
-The Client class is an interface over the QlikSense APIs. The client sets up authentication, logging, and base
-settings for interacting with the Qlik Sense APIs. All calls are configured by appropriate lower level services and
-then passed up to this class to execute.
-"""
 import logging
 import sys
 import os.path
@@ -17,12 +12,14 @@ _logger.addHandler(logging.StreamHandler(sys.stdout))
 
 class SSLClient(base.Client):
     """
-    An interface over the QlikSense APIs that uses SSL authentication
+    An interface over the QlikSense QRS API that uses SSL authentication. You can obtain a certificate using the QS Hub
+    and save it on the local machine. By default, this certificate grants you sysadmin on the server. If you want to
+    restrict privileges, use `directory` and `user` to execute calls as that user.
 
     Args:
-        scheme: http/https
         host: hostname to connect to
         port: port number, defaults to 4242
+        scheme: http/https, defaults to https
         certificate: path to .pem client certificate
         verify: false to trust in self-signed certificates
         directory: directory for the user
@@ -30,10 +27,10 @@ class SSLClient(base.Client):
     """
     _qlik_user = None
 
-    def __init__(self, scheme: str, host: str, port: int = 4242,
+    def __init__(self, host: str, port: int = 4242, scheme: str = 'https',
                  certificate: str = None, verify: bool = False,
                  directory: str = None, user: str = None):
-        super().__init__(scheme=scheme, host=host, port=port)
+        super().__init__(host=host, port=port, scheme=scheme)
 
         _logger.debug('__SET SSL AUTH')
         path, ext = os.path.splitext(certificate)
@@ -59,6 +56,5 @@ class SSLClient(base.Client):
         Returns: the headers for the request as a dictionary
         """
         headers = super()._get_headers(xrf_key=xrf_key)
-        if self._qlik_user:
-            headers.update({'X-Qlik-User': self._qlik_user})
+        headers.update({'X-Qlik-User': self._qlik_user})
         return headers

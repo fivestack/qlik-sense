@@ -1,20 +1,28 @@
 # Qlik Sense
 
-**This library provides tools to interact with Qlik Sense's APIs natively in python.**
+**This library is a python client for the Qlik Sense APIs**
 
 ---
 
 # Overview
 
-This library is being developed so that Qlik Sense applications can be worked into a larger
-python workflow more easily. While Qlik's API could be used directly, this streamlines the process.
+This library allows users to more easily work with Qlik Sense applications in a larger python workflow. While Qlik's
+APIs could be used directly, this streamlines the process.
+
+#### Disclaimer:
+
+This library, and its maintainer, have no affiliation with QlikTech. Qlik support agreement does not cover
+support for this application.
 
 # Requirements
 
 - Python 3.7+
 - requests
 - requests_ntlm
+- requests_negotiate_sspi
 - urllib3
+- uuid
+- marshmallow
 
 # Installation
 
@@ -26,25 +34,15 @@ pip install qlik_sense
 
 # Examples
 
-Use this library to reload a Qlik Sense app:
+Use this library to work with Qlik Sense apps:
 ```python
-from qlik_sense import api
 
-qs = api.QlikSense(host='HOST_NAME', certificate='CERT_FILE_PATH')
+from qlik_sense import NTLMClient
 
-app = qs.get_app_by_name_and_stream(app_name='Rate Monitor', stream_name='Actuarial')
-qs.reload_app(guid=app.guid)
+qs = NTLMClient(host='url/to/qlik/sense/server')
+app = qs.app.get_by_name_and_stream(app_name='My App', stream_name='My Stream')
+qs.app.reload(app=app)
 ```
-
-# Acknowledgements
-
-This package was inspired by Rafael Sanz's work:
-
-https://github.com/rafael-sanz/qsAPI/blob/master/qsAPI.py
-
-I would like to acknowledge the work he spent to figure out all of the logistics of Qlik Sense's APIs.
-I redeployed a modified version of his Controller class as the core Session class in the ORM for this library and
-built functionality around that class.
 
 # Full Documentation
 

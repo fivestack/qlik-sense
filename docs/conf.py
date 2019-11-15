@@ -24,7 +24,6 @@ release = '0.2.1'
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx_autodoc_typehints',

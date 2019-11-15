@@ -6,6 +6,9 @@
 Welcome to Qlik Sense's documentation!
 ======================================
 
+The source repository is located
+`here <https://github.com/fivestack/qlik_sense>`_
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

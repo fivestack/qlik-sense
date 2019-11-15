@@ -18,7 +18,8 @@ project = 'Qlik Sense'
 copyright = '2019, Michael Alfare'
 author = 'Mike Alfare'
 
-release = '0.2.1'
+from qlik_sense import __version__ as package_version
+release = package_version
 
 # -- General configuration ---------------------------------------------------
 

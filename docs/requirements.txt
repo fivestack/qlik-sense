@@ -1,8 +1,4 @@
+
 sphinx
 sphinx-autodoc-typehints
 sphinx_rtd_theme
-requests
-requests_ntlm
-urllib3
-uuid
-marshmallow

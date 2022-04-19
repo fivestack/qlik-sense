@@ -15,6 +15,7 @@ class UserCondensed(EntityCondensed):
     """
     user_name: str = field(default=None, hash=True)
     user_directory: str = field(default=None, hash=True)
+    user_directory_connector: str = field(default=None, hash=True)
 
 
 class UserCondensedSchema(EntityCondensedSchema):
@@ -23,6 +24,9 @@ class UserCondensedSchema(EntityCondensedSchema):
     """
     user_name: str = ma.fields.Str(required=True, data_key='userId')
     user_directory: str = ma.fields.Str(required=True, data_key='userDirectory')
+    user_directory_connector: str = ma.fields.Str(
+        required=True, data_key='userDirectoryConnectorName'
+    )
 
     @ma.pre_dump()
     def pre_dump(self, data: 'Union[UserCondensed, dict]', **kwargs) -> dict:
